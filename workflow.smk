@@ -1,4 +1,5 @@
 
+from collections import defaultdict
 from pathlib import Path
 import pandas as pd
 import subprocess
@@ -15,12 +16,25 @@ def get_samples(experiment):
     return list(samples[samples['experiment'] == experiment]['sample'])
 
 experiments = {k: v for k, v in zip(samples['experiment'], samples['comet_params'])}
-exp_to_enzyme = {k: v for k, v in zip(samples['experiment'], samples['enzyme_regex'])}
-# TODO check here the case where a single experiment has multiple fasta files
-exp_to_fasta = {k: v for k, v in zip(samples['experiment'], samples['fasta'])}
-samp_to_fasta = {k: v for k, v in zip(samples['sample'], samples['fasta'])}
-samp_to_params = {k: v for k, v in zip(samples['sample'], samples['comet_params'])}
-samp_to_ftp = {k: v for k, v in zip(samples['sample'], samples['server'])}
+
+exp_to_enzyme = defaultdict(lambda: list())
+exp_to_fasta = defaultdict(lambda: list())
+
+for k, v1, v2 in zip(samples['experiment'], samples['enzyme_regex'], samples['fasta']):
+    exp_to_enzyme[k].append(v1)
+    exp_to_fasta[k].append(v2)
+
+exp_to_enzyme = {k:list(set(v)) for k, v in exp_to_enzyme.items()}
+exp_to_fasta = {k:list(set(v)) for k, v in exp_to_fasta.items()}
+
+samp_to_fasta = {}
+samp_to_params = {}
+samp_to_ftp = {}
+
+for samp, fas, params, ftp in zip(samples['sample'], samples['fasta'], samples['comet_params'], samples['server']):
+    samp_to_fasta[samp] = fas
+    samp_to_params[samp] = params
+    samp_to_ftp[samp] = ftp
 
 curr_dir = str(pathlib.Path(".").absolute())
 
@@ -267,17 +281,33 @@ def get_exp_fasta(wildcards):
     return exp_to_fasta[wildcards.experiment]
 
 def get_enzyme_regex(wildcards):
-    return exp_to_enzyme[wildcards.experiment]
+    out = exp_to_enzyme[wildcards.experiment]
+    assert len(out) == 1
+    return out[0]
+
+rule experiment_fasta:
+    input:
+        get_exp_fasta
+    output:
+        "experiment_fasta/{experiment}.fasta"
+    shell:
+        """
+        set -x
+        set -e
+
+        mkdir -p 
+        cat {input} > experiment_fasta/{experiment}.fasta
+        """
 
 rule mokapot:
     input:
-        get_mokapot_ins
+        get_mokapot_ins,
+        "experiment_fasta/{experiment}.fasta"
     output:
         "mokapot/{experiment}.mokapot.psms.txt",
         "mokapot/{experiment}.mokapot.peptides.txt"
     params:
         enzyme_regex=get_enzyme_regex,
-        fasta=get_exp_fasta,
     shell:
         """
         set -e
