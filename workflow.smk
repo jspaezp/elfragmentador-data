@@ -5,6 +5,8 @@ import subprocess
 import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
+from pyteomics import fasta
+import mokapot
 
 in_tsv = config['tsv_file']
 samples = pd.read_table(in_tsv).set_index("sample", drop=False)
@@ -13,6 +15,8 @@ def get_samples(experiment):
     return list(samples[samples['experiment'] == experiment]['sample'])
 
 experiments = {k: v for k, v in zip(samples['experiment'], samples['comet_params'])}
+exp_to_enzyme = {k: v for k, v in zip(samples['experiment'], samples['enzyme_regex'])}
+exp_to_fasta = {k: v for k, v in zip(samples['experiment'], samples['fasta'])}
 samp_to_fasta = {k: v for k, v in zip(samples['sample'], samples['fasta'])}
 samp_to_params = {k: v for k, v in zip(samples['sample'], samples['comet_params'])}
 samp_to_ftp = {k: v for k, v in zip(samples['sample'], samples['server'])}
@@ -22,7 +26,20 @@ curr_dir = str(pathlib.Path(".").absolute())
 if shutil.which("docker"):
     TPP_DOCKER=f"docker run -v {curr_dir}/:/data/ spctools/tpp "
 else:
-    TPP_DOCKER=f"singularity exec /scratch/brown/jpaezpae/opt/tpp.img"
+    TPP_DOCKER=f"singularity exec /scratch/brown/jpaezpae/opt/tpp.img "
+
+localrules: 
+    all,
+    crap_fasta,
+    decoy_db,
+    biognosys_irt_fasta,
+    human_fasta,
+    h_contam_fasta,
+    download_file,
+    comet_phospho_params,
+    comet_proalanase_params,
+    generate_sptxt_csv,
+    prosit_input
 
 rule all:
     input:
@@ -33,12 +50,26 @@ rule all:
 
 rule crap_fasta:
     output:
-        "fasta/crap.fasta"
+        fasta="fasta/crap.fasta",
     shell:
         """
         mkdir -p fasta
-        wget ftp://ftp.thegpm.org/fasta/cRAP/crap.fasta -O ./fasta/crap.fasta
+        wget \
+            --timeout=15 \
+            --limit-rate=50m \
+            --wait=5 \
+            ftp://ftp.thegpm.org/fasta/cRAP/crap.fasta \
+            -O ./fasta/crap.fasta
         """
+
+rule decoy_db:
+    input:
+        "fasta/{file}.fasta"
+    output:
+        "fasta/{file}.decoy.fasta"
+    run:
+        fasta.write_decoy_db(str(input), str(output))
+
 
 rule biognosys_irt_fasta:
     output:
@@ -46,7 +77,9 @@ rule biognosys_irt_fasta:
     shell:
         """
         mkdir -p fasta
-        wget https://biognosys.com/media.ashx/irtfusion.fasta -O fasta/irtfusion.fasta
+        wget \
+            https://biognosys.com/media.ashx/irtfusion.fasta \
+            -O fasta/irtfusion.fasta
         """
 
 
@@ -56,7 +89,9 @@ rule human_fasta:
     shell:
         """
         mkdir -p fasta
-        wget https://www.uniprot.org/uniprot/\?query\=proteome:UP000005640%20reviewed:yes\&format\=fasta -O fasta/human.fasta
+        wget \
+            https://www.uniprot.org/uniprot/\?query\=proteome:UP000005640%20reviewed:yes\&format\=fasta \
+            -O fasta/human.fasta
         """
 
 
@@ -66,7 +101,9 @@ rule yeast_fasta:
     shell:
         """
         mkdir -p fasta
-        wget https://www.uniprot.org/uniprot/\?query\=proteome:UP000002311%20reviewed:yes\&format\=fasta -O fasta/yeast.fasta
+        wget \
+            https://www.uniprot.org/uniprot/\?query\=proteome:UP000002311%20reviewed:yes\&format\=fasta \
+            -O fasta/yeast.fasta
         """
 
 
@@ -92,7 +129,7 @@ rule contam_fasta:
         cat fasta/{wildcards.basename}.fasta fasta/crap.fasta > fasta/{wildcards.basename}_contam.fasta
         """
 
-rule irt_fasta:
+rule added_irt_fasta:
     input:
         "fasta/irtfusion.fasta",
         "fasta/{basename}.fasta"
@@ -132,6 +169,8 @@ rule convert_file:
     output:
         "raw/{sample}.mzML"
     run:
+        # For some reaso, the dockerized version fails when running it directly
+        # in this script, so you have to hack it this way ...
         subprocess.run(['zsh', 'msconvert.bash', str(input)])
 
 def get_fasta(wildcards):
@@ -185,7 +224,8 @@ rule comet_search:
     output:
         # Enable if using 2 in the decoy search parameter
         # decoy_pepxml = "comet/{sample}.decoy.pep.xml", 
-        forward_pepxml = "comet/{sample}.pep.xml"
+        forward_pepxml = "comet/{sample}.pep.xml",
+        forward_pin = "comet/{sample}.pin"
     run:
         shell("mkdir -p comet")
         cmd = (
@@ -197,7 +237,93 @@ rule comet_search:
         print(cmd)
         shell(cmd)
         shell(f"cp raw/{wildcards.sample}.pep.xml ./comet/.")
-        # shell(f"cp raw/{wildcards.sample}.decoy.pep.xml ./comet/.")
+        shell(f"cp raw/{wildcards.sample}.pin ./comet/.")
+
+def get_mokapot_ins(wildcards):
+    outs = expand("comet/{sample}.pin", sample = get_samples(wildcards.experiment))
+    return outs
+
+def get_exp_fasta(wildcards):
+    return exp_to_fasta[wildcards.experiment]
+
+def get_enzyme_regex(wildcards):
+    return exp_to_enzyme[wildcards.experiment]
+
+rule mokapot:
+    input:
+        get_mokapot_ins
+    output:
+        "mokapot/{experiment}.mokapot.psms.txt",
+        "mokapot/{experiment}.mokapot.peptides.txt"
+    params:
+        enzyme_regex=get_enzyme_regex,
+        fasta=get_exp_fasta,
+    shell:
+        """
+        set -e
+        set -x
+
+        mkdir -p mokapot
+        mokapot --verbosity 2 \
+            --seed 2020 \
+            --enzyme {params.enzyme_regex} \
+            --decoy_prefix DECOY_ \
+            --proteins {params.fasta} \
+            --missed_cleavages 2 \
+            --min_length 5 \
+            --max_length 50 \
+            -d mokapot \
+            -r {wildcards.experiment} {input} 
+        """
+
+rule mokapot_spectrast_in:
+    input:
+        "mokapot/{experiment}.mokapot.psms.txt",
+    output:
+        "mokapot/{experiment}.spectrast.mokapot.psms.tsv",
+    run:
+        # TODO change this so it uses column names
+        # TODO filter based on peptides and protein fdr as well
+        index_order=[0, 2, 5, 9, 7, 6]
+        df = pd.read_table(str(input))
+        df['Peptide'] = [x.replace("[", "[+") for x in df['Peptide']]
+        df['Charge'] = ["_".join(line.split("_")[-2]) for line in df['SpecId']]
+        df['Peptide'] = [ f"{x}/{y}" for x, y in zip(df['Peptide'], df['Charge'])]
+        df['SpecId'] = ["_".join(line.split("_")[:-3]) for line in df['SpecId']]
+        df['mokapot PEP'] = 1-df['mokapot PEP']
+
+        # Filter here for q-val since the tsv does not allow the -cq argument in spectrast
+        df = df[df['mokapot q-value'] < 0.01]
+
+        col_neworder = [list(df)[x] for x in index_order]
+        df = df[col_neworder]
+        df.to_csv(str(output), sep = '\t', index=False)
+
+
+rule mokapot_spectrast:
+    input:
+        spectrast_usermods="spectrast_params/spectrast.usermods",
+        mokapot_in="mokapot/{experiment}.spectrast.mokapot.psms.tsv"
+    output:
+        "mokapot_spectrast/{experiment}.mokapot.psms.sptxt",
+        "mokapot_spectrast/{experiment}.mokapot.psms.splib",
+        "mokapot_spectrast/{experiment}.mokapot.psms.pepidx",
+        "mokapot_spectrast/{experiment}.mokapot.psms.spidx",
+        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.sptxt",
+        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.splib",
+        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.pepidx",
+        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.spidx"
+    shell:
+        "set -x ; set -e ; mkdir -p mokapot_spectrast ; "
+        f"{TPP_DOCKER}"
+        " spectrast -V -cIHCD -M{input.spectrast_usermods}"
+        " -Lmokapot_spectrast/{wildcards.experiment}.mokapot.psms.log"
+        " -cNmokapot_spectrast/{wildcards.experiment}.mokapot.psms {input.mokapot_in} ;"
+        f"{TPP_DOCKER}"
+        " spectrast -cr1 -cAC -c_DIS -M{input.spectrast_usermods}" 
+        " -Lmokapot_spectrast/concensus_{wildcards.experiment}.mokapot.psms.log"
+        " -cNmokapot_spectrast/concensus_{wildcards.experiment}.mokapot.psms"
+        " mokapot_spectrast/{wildcards.experiment}.mokapot.psms.splib"
 
 
 rule interact:
