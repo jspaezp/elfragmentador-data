@@ -28,17 +28,35 @@ if shutil.which("docker"):
 else:
     TPP_DOCKER=f"singularity exec /scratch/brown/jpaezpae/opt/tpp.img "
 
-localrules: 
+localrules:
+    # get list with $ grep -P "^rule" workflow.smk | sed -e "s/rule //g" | sed -e "s/:/,/g" 
+    # and comment out the ones that should run in parallel in the cluster
     all,
     crap_fasta,
     decoy_db,
     biognosys_irt_fasta,
     human_fasta,
-    download_file,
+    yeast_fasta,
+    human_yeast_fasta,
+    contam_fasta,
+    added_irt_fasta,
+    proteometools_fasta,
+    # download_file,
+    # convert_file,
     comet_phospho_params,
+    comet_gg_params,
     comet_proalanase_params,
-    generate_sptxt_csv,
-    prosit_input
+    # comet_search,
+    # mokapot,
+    mokapot_spectrast_in,
+    # mokapot_spectrast,
+    # interact,
+    # peptideprophet,
+    # indiv_spectrast,
+    # iprophet,
+    # spectrast,
+    # generate_sptxt_csv,
+    prosit_input,
 
 rule all:
     input:
