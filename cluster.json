@@ -7,6 +7,14 @@
         "cpus-per-task": "1",
         "N": "1"
     },
+    "download_file":
+    {
+        "time": "0:15:00"
+    },
+    "convert_file":
+    {
+        "time": "0:30:00"
+    },
     "comet_search":
     {
         "mem": "50G",

@@ -285,6 +285,7 @@ rule mokapot:
         mkdir -p mokapot
         mokapot --verbosity 2 \
             --seed 2020 \
+            --aggregate \
             --enzyme {params.enzyme_regex} \
             --decoy_prefix DECOY_ \
             --proteins {params.fasta} \
