@@ -112,7 +112,7 @@ rule proteometools_fasta:
         "fasta/{basename}_contam.fasta"
     shell:
         """
-        cat fasta/proteometools/{wildcards.basename}.fasta \
+        cat fasta/proteometools/Packet_{wildcards.basename}.fasta \
             fasta/RT_QC.fasta \
             fasta/crap.fasta > fasta/{wildcards.basename}_contam.fasta
         """
@@ -189,7 +189,7 @@ rule comet_search:
     run:
         shell("mkdir -p comet")
         cmd = (
-            f"{TPP_DOCKER}"
+            f"{TPP_DOCKER} "
             f"comet -P{str(input.comet_params)} "
             f"-D{str(input.fasta)} "
             f"{str(input.raw)} " )
