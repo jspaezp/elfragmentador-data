@@ -62,6 +62,7 @@ localrules:
     comet_gg_params,
     comet_proalanase_params,
     # comet_search,
+    experiment_fasta,
     # mokapot,
     mokapot_spectrast_in,
     # mokapot_spectrast,
@@ -295,14 +296,14 @@ rule experiment_fasta:
         set -x
         set -e
 
-        mkdir -p 
-        cat {input} > experiment_fasta/{experiment}.fasta
+        mkdir -p experiment_fasta
+        cat {input} > experiment_fasta/{wildcards.experiment}.fasta
         """
 
 rule mokapot:
     input:
-        get_mokapot_ins,
-        "experiment_fasta/{experiment}.fasta"
+        pin_files=get_mokapot_ins,
+        fasta="experiment_fasta/{experiment}.fasta"
     output:
         "mokapot/{experiment}.mokapot.psms.txt",
         "mokapot/{experiment}.mokapot.peptides.txt"
@@ -319,12 +320,12 @@ rule mokapot:
             --aggregate \
             --enzyme {params.enzyme_regex} \
             --decoy_prefix DECOY_ \
-            --proteins {params.fasta} \
+            --proteins {input.fasta} \
             --missed_cleavages 2 \
             --min_length 5 \
             --max_length 50 \
             -d mokapot \
-            -r {wildcards.experiment} {input} 
+            -r {wildcards.experiment} {input.pin_files} 
         """
 
 rule mokapot_spectrast_in:
