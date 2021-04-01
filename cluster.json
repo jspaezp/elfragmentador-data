@@ -10,7 +10,7 @@
     "comet_search":
     {
         "mem": "50G",
-        "cpus-per-task": "24"
+        "cpus-per-task": "10"
     },
     "mokapot":
     {
