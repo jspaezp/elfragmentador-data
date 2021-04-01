@@ -16,6 +16,7 @@ def get_samples(experiment):
 
 experiments = {k: v for k, v in zip(samples['experiment'], samples['comet_params'])}
 exp_to_enzyme = {k: v for k, v in zip(samples['experiment'], samples['enzyme_regex'])}
+# TODO check here the case where a single experiment has multiple fasta files
 exp_to_fasta = {k: v for k, v in zip(samples['experiment'], samples['fasta'])}
 samp_to_fasta = {k: v for k, v in zip(samples['sample'], samples['fasta'])}
 samp_to_params = {k: v for k, v in zip(samples['sample'], samples['comet_params'])}
@@ -318,6 +319,8 @@ rule mokapot_spectrast_in:
         col_neworder = [list(df)[x] for x in index_order]
         df = df[col_neworder]
         df.to_csv(str(output), sep = '\t', index=False)
+        print(str(input))
+        print(df)
 
 
 rule mokapot_spectrast:
