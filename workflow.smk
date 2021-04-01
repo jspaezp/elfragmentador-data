@@ -6,7 +6,8 @@ import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
 
-samples = pd.read_table("sample_info.tsv").set_index("sample", drop=False)
+in_tsv = config['tsv_file']
+samples = pd.read_table(in_tsv).set_index("sample", drop=False)
 
 def get_samples(experiment):
     return list(samples[samples['experiment'] == experiment]['sample'])
@@ -58,15 +59,62 @@ rule human_fasta:
         wget https://www.uniprot.org/uniprot/\?query\=proteome:UP000005640%20reviewed:yes\&format\=fasta -O fasta/human.fasta
         """
 
+
+rule yeast_fasta:
+    output:
+        "fasta/yeast.fasta"
+    shell:
+        """
+        mkdir -p fasta
+        wget https://www.uniprot.org/uniprot/\?query\=proteome:UP000002311%20reviewed:yes\&format\=fasta -O fasta/yeast.fasta
+        """
+
+
+rule human_yeast_fasta:
+    input:
+        "fasta/human.fasta",
+        "fasta/yeast.fasta"
+    output:
+        "fasta/human_yeast.fasta"
+    shell:
+        """
+        cat fasta/human.fasta fasta/yeast.fasta > fasta/human_yeast.fasta
+        """
+
 rule contam_fasta:
     input:
         "fasta/crap.fasta",
-        "fasta/human.fasta"
+        "fasta/{basename}.fasta"
     output:
-        "fasta/human_contam.fasta"
+        "fasta/{basename}_contam.fasta"
     shell:
         """
-        cat fasta/human.fasta fasta/crap.fasta > fasta/human_contam.fasta
+        cat fasta/{wildcards.basename}.fasta fasta/crap.fasta > fasta/{wildcards.basename}_contam.fasta
+        """
+
+rule irt_fasta:
+    input:
+        "fasta/irtfusion.fasta",
+        "fasta/{basename}.fasta"
+    output:
+        "fasta/{basename}_irt.fasta"
+    shell:
+        """
+        cat fasta/{wildcards.basename}.fasta fasta/irtfusion.fasta > fasta/{wildcards.basename}_irt.fasta
+        """
+
+rule proteometools_fasta:
+    input:
+        "fasta/RT_QC.fasta",
+        "fasta/crap.fasta",
+        "fasta/proteometools/Packet_{basename}.fasta"
+    output:
+        "fasta/{basename}_contam.fasta"
+    shell:
+        """
+        cat fasta/proteometools/{wildcards.basename}.fasta \
+            fasta/RT_QC.fasta \
+            fasta/crap.fasta > fasta/{wildcards.basename}_contam.fasta
         """
 
 rule download_file:
@@ -101,6 +149,18 @@ rule comet_phospho_params:
         """
         cat {input} | \
             sed -e "s/variable_mod02 = 0.0 X 0 3 -1 0 0/variable_mod02 = 79.966331 STY 0 3 -1 0 0/g" \
+            | tee {output}
+        """
+
+rule comet_gg_params:
+    input:
+        "comet_params/comet.params.high_high"
+    output:
+        "comet_params/comet_gg.params.high_high"
+    shell:
+        """
+        cat {input} | \
+            sed -e "s/variable_mod02 = 0.0 X 0 3 -1 0 0/variable_mod02 = 114.042927 K 0 3 -1 0 0/g" \
             | tee {output}
         """
 
