@@ -34,7 +34,6 @@ localrules:
     decoy_db,
     biognosys_irt_fasta,
     human_fasta,
-    h_contam_fasta,
     download_file,
     comet_phospho_params,
     comet_proalanase_params,
@@ -43,10 +42,11 @@ localrules:
 
 rule all:
     input:
-        [f"ind_spectrast/{x}.pp.sptxt" for x in samples["sample"]],
-        [f"spectrast/concensus_{x}.iproph.pp.sptxt" for x in samples["experiment"]],
-        [f"prosit_in/{x}.iproph.pp.sptxt" for x in samples["experiment"]],
-        [f"sptxt_csv/{x}.iproph.pp.sptxt.csv" for x in samples["experiment"]],
+        # [f"ind_spectrast/{x}.pp.sptxt" for x in samples["sample"]],
+        # [f"spectrast/concensus_{x}.iproph.pp.sptxt" for x in samples["experiment"]],
+        # [f"prosit_in/{x}.iproph.pp.sptxt" for x in samples["experiment"]],
+        # [f"sptxt_csv/{x}.iproph.pp.sptxt.csv" for x in samples["experiment"]],
+        [f"mokapot_spectrast/concensus_{x}.mokapot.psms.spidx" for x in samples["experiment"]],
 
 rule crap_fasta:
     output:
@@ -68,6 +68,7 @@ rule decoy_db:
     output:
         "fasta/{file}.decoy.fasta"
     run:
+        # Note that it writes a concatenated decoy+target database, not only decoys
         fasta.write_decoy_db(str(input), str(output))
 
 

@@ -12,6 +12,7 @@ pandas = "^1.2.3"
 elfragmentador = {git = "https://github.com/jspaezp/elfragmentador.git", rev = "main"}
 llvmlite = "^0.36.0"
 mokapot = "^0.7.1"
+pyteomics = "^4.4.2"
 
 [tool.poetry.dev-dependencies]
 

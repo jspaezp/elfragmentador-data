@@ -1,6 +1,12 @@
 
 Run as ...
 
+To display the graph
+
+```
+$ snakemake --cores 1 -s workflow.smk --dry-run --config tsv_file=./small_sample_info.tsv --dag | dot -Tsvg > dag.svg
+```
+
 When using locally
 
 ```
