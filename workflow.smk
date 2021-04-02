@@ -210,6 +210,8 @@ rule convert_file:
         "raw/{sample}.raw"
     output:
         "raw/{sample}.mzML"
+    benchmark:
+        "benchmarks/{sample}.conversion.benchmark.txt"
     run:
         # For some reaso, the dockerized version fails when running it directly
         # in this script, so you have to hack it this way ...
@@ -268,6 +270,8 @@ rule comet_search:
         # decoy_pepxml = "comet/{sample}.decoy.pep.xml", 
         forward_pepxml = "comet/{sample}.pep.xml",
         forward_pin = "comet/{sample}.pin"
+    benchmark:
+        "benchmarks/{sample}.comet_search.benchmark.txt"
     run:
         shell("mkdir -p comet")
         cmd = (
@@ -336,6 +340,8 @@ rule mokapot:
         "mokapot/{experiment}.mokapot.peptides.txt"
     params:
         enzyme_regex=get_enzyme_regex,
+    benchmark:
+        "benchmarks/{experiment}.mokapot.benchmark.txt"
     shell:
         """
         set -e
@@ -394,6 +400,8 @@ rule mokapot_spectrast:
         "mokapot_spectrast/concensus_{experiment}.mokapot.psms.splib",
         "mokapot_spectrast/concensus_{experiment}.mokapot.psms.pepidx",
         "mokapot_spectrast/concensus_{experiment}.mokapot.psms.spidx"
+    benchmark:
+        "benchmarks/{experiment}.mokapot_spectrast.benchmark.txt"
     shell:
         "set -x ; set -e ; mkdir -p mokapot_spectrast ; "
         f"{TPP_DOCKER}"
