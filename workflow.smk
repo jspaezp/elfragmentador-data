@@ -274,7 +274,8 @@ rule comet_search:
         # Enable if using 2 in the decoy search parameter
         # decoy_pepxml = "comet/{sample}.decoy.pep.xml", 
         forward_pepxml = "comet/{sample}.pep.xml",
-        forward_pin = "comet/{sample}.pin"
+        forward_pin = "comet/{sample}.pin",
+        decoy_plot = "comet/{sample}.png"
     benchmark:
         "benchmarks/{sample}.comet_search.benchmark.txt"
     run:
