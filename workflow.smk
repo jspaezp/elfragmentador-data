@@ -6,7 +6,12 @@ import subprocess
 import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
+
+# This prevents the command failing without an x server
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 from pyteomics import fasta
 import mokapot
 
