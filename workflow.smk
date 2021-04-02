@@ -6,6 +6,7 @@ import subprocess
 import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
+import matplotlib.pyplot as plt
 from pyteomics import fasta
 import mokapot
 
@@ -272,6 +273,22 @@ rule comet_search:
         shell(cmd)
         shell(f"cp raw/{wildcards.sample}.pep.xml ./comet/.")
         shell(f"cp raw/{wildcards.sample}.pin ./comet/.")
+
+        # Plotting the xcorr distribution of decoys and targets
+        n = 28
+        df = pd.read_csv(
+            f"comet/{wildcards.sample}.pin",
+            sep = "\t",
+            usecols=range(n),
+            lineterminator='\n')
+
+        tps = [s for s,l in zip(df['Xcorr'], df['Label']) if l > 0]
+        fps = [s for s,l in zip(df['Xcorr'], df['Label']) if l < 0]
+
+        plt.hist(tps, alpha=0.8)
+        plt.hist(fps, alpha=0.8)
+        plt.savefig(f"comet/{wildcards.sample}.png",)
+            
 
 def get_mokapot_ins(wildcards):
     outs = expand("comet/{sample}.pin", sample = get_samples(wildcards.experiment))
