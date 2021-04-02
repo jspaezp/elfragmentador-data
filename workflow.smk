@@ -277,17 +277,21 @@ rule comet_search:
 
         # Plotting the xcorr distribution of decoys and targets
         n = 28
-        df = pd.read_csv(
+        chunked_df = pd.read_csv(
             f"comet/{wildcards.sample}.pin",
             sep = "\t",
             usecols=range(n),
-            lineterminator='\n')
+            lineterminator='\n', 
+            chunksize=1000)
 
-        tps = [s for s,l in zip(df['Xcorr'], df['Label']) if l > 0]
-        fps = [s for s,l in zip(df['Xcorr'], df['Label']) if l < 0]
+        tps = []
+        fps = []
+        for df in chunked_df:
+            tps.extend([s for s,l in zip(df['Xcorr'], df['Label']) if l > 0])
+            fps.extend([s for s,l in zip(df['Xcorr'], df['Label']) if l < 0])
 
-        plt.hist(tps, alpha=0.8)
-        plt.hist(fps, alpha=0.8)
+        plt.hist(tps, alpha=0.8, color = 'cyan')
+        plt.hist(fps, alpha=0.8, color = 'magenta')
         plt.savefig(f"comet/{wildcards.sample}.png",)
             
 

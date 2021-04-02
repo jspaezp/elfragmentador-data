@@ -1,0 +1,4 @@
+
+slurm*.out
+fasta/*.decoy.fasta
+fasta/*_contam.fasta
