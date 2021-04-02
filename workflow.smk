@@ -196,7 +196,13 @@ rule download_file:
     run:
         server = samp_to_ftp[wildcards.sample]
         shell("mkdir -p raw")
-        shell(f"wget {server}"+"/{wildcards.sample}.raw -O "+"{output}")
+        shell((
+            f"wget {server}"+"/{wildcards.sample}.raw -O "
+            "{output} "
+            "--timeout=15 "
+            "--limit-rate=50m "
+            "--wait=5 "
+        ))
     
 
 rule convert_file:
