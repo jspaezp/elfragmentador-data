@@ -28,5 +28,6 @@ $ `which snakemake` \
     --conda-prefix /scratch/brown/jpaezpae/conda_envs/irt \
     --local-cores 1 \
     -s workflow.smk \
+    --printshellcmds \
     --config tsv_file=./small_sample_info.tsv   
 ```
