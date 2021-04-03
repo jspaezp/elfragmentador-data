@@ -23,7 +23,8 @@
     "mokapot":
     {
         "mem": "90G",
-        "cpus-per-task": "10"
+        "cpus-per-task": "10",
+        "time": "4:00:00"
     },
     "mokapot_spectrast":
     {

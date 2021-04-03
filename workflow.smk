@@ -6,6 +6,7 @@ import subprocess
 import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
+from .mokapot_utils import filter_mokapot_psm, psm_df_to_tsv, add_spectrast_ce_info
 
 # This prevents the command failing without an x server
 import matplotlib as mpl
@@ -369,29 +370,13 @@ rule mokapot:
 
 rule mokapot_spectrast_in:
     input:
-        "mokapot/{experiment}.mokapot.psms.txt",
+        psm_input="mokapot/{experiment}.mokapot.psms.txt",
+        peptide_input="mokapot/{experiment}.mokapot.peptides.txt",
     output:
         "mokapot/{experiment}.spectrast.mokapot.psms.tsv",
     run:
-        # TODO change this so it uses column names
-        # TODO filter based on peptides and protein fdr as well
-        index_order=[0, 2, 5, 9, 7, 6]
-        df = pd.read_table(str(input))
-        df['Peptide'] = [x.replace("[", "[+") for x in df['Peptide']]
-        df['Charge'] = ["_".join(line.split("_")[-2]) for line in df['SpecId']]
-        df['Peptide'] = [ f"{x}/{y}" for x, y in zip(df['Peptide'], df['Charge'])]
-        df['SpecId'] = ["_".join(line.split("_")[:-3]) for line in df['SpecId']]
-        df['mokapot PEP'] = 1-df['mokapot PEP']
-
-        # Filter here for q-val since the tsv does not allow the -cq argument in spectrast
-        df = df[df['mokapot q-value'] < 0.001]
-        df = df[df['mokapot PEP'] > 0.99]
-
-        col_neworder = [list(df)[x] for x in index_order]
-        df = df[col_neworder]
-        df.to_csv(str(output), sep = '\t', index=False)
-        print(str(input))
-        print(df)
+        df = filter_mokapot_psm(input.psm_input, input.peptide_input)
+        psm_df_to_tsv(df, str(output))
 
 
 rule mokapot_spectrast:
@@ -403,10 +388,6 @@ rule mokapot_spectrast:
         "mokapot_spectrast/{experiment}.mokapot.psms.splib",
         "mokapot_spectrast/{experiment}.mokapot.psms.pepidx",
         "mokapot_spectrast/{experiment}.mokapot.psms.spidx",
-        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.sptxt",
-        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.splib",
-        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.pepidx",
-        "mokapot_spectrast/concensus_{experiment}.mokapot.psms.spidx"
     benchmark:
         "benchmarks/{experiment}.mokapot_spectrast.benchmark.txt"
     shell:
@@ -414,12 +395,36 @@ rule mokapot_spectrast:
         f"{TPP_DOCKER}"
         " spectrast -V -cIHCD -M{input.spectrast_usermods}"
         " -Lmokapot_spectrast/{wildcards.experiment}.mokapot.psms.log"
-        " -cNmokapot_spectrast/{wildcards.experiment}.mokapot.psms {input.mokapot_in} ;"
+        " -cNmokapot_spectrast/{wildcards.experiment}.mokapot.psms"
+        " {input.mokapot_in} ;"
+
+rule add_ce_info:
+    input:
+        "mokapot_spectrast/{experiment}.mokapot.psms.sptxt",
+    output:
+        "mokapot_spectrast/{experiment}.ce.mokapot.psms.sptxt",
+    run:
+        add_spectrast_ce_info('raw/', input, output)
+    
+
+rule mokapot_spectrast_concensus:
+    input:
+        spectrast_usermods="spectrast_params/spectrast.usermods",
+        sptxt="mokapot_spectrast/{experiment}.ce.mokapot.psms.sptxt",
+    output:
+        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.sptxt",
+        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.splib",
+        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.pepidx",
+        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.spidx"
+    benchmark:
+        "benchmarks/{experiment}.mokapot_spectrast_concensus.benchmark.txt"
+    shell:
+        "set -x ; set -e ; mkdir -p mokapot_spectrast ; "
         f"{TPP_DOCKER}"
         " spectrast -cr1 -cAC -c_DIS -M{input.spectrast_usermods}" 
-        " -Lmokapot_spectrast/concensus_{wildcards.experiment}.mokapot.psms.log"
-        " -cNmokapot_spectrast/concensus_{wildcards.experiment}.mokapot.psms"
-        " mokapot_spectrast/{wildcards.experiment}.mokapot.psms.splib"
+        " -Lmokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms.log"
+        " -cNmokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms"
+        " {input.sptxt}"
 
 
 rule interact:
