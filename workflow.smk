@@ -384,7 +384,8 @@ rule mokapot_spectrast_in:
         df['mokapot PEP'] = 1-df['mokapot PEP']
 
         # Filter here for q-val since the tsv does not allow the -cq argument in spectrast
-        df = df[df['mokapot q-value'] < 0.01]
+        df = df[df['mokapot q-value'] < 0.001]
+        df = df[df['mokapot PEP'] > 0.99]
 
         col_neworder = [list(df)[x] for x in index_order]
         df = df[col_neworder]
