@@ -31,5 +31,11 @@
         "mem": "90G",
         "cpus-per-task": "4",
         "time": "4:00:00"
+    },
+    "add_ce_info":
+    {
+        "mem": "10G",
+        "cpus-per-task": "1",
+        "time":"4:00:00"
     }
 }
