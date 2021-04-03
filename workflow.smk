@@ -6,7 +6,7 @@ import subprocess
 import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
-from .mokapot_utils import filter_mokapot_psm, psm_df_to_tsv, add_spectrast_ce_info
+from mokapot_utils import filter_mokapot_psm, psm_df_to_tsv, add_spectrast_ce_info
 
 # This prevents the command failing without an x server
 import matplotlib as mpl
@@ -87,7 +87,7 @@ rule all:
         # [f"spectrast/concensus_{x}.iproph.pp.sptxt" for x in samples["experiment"]],
         # [f"prosit_in/{x}.iproph.pp.sptxt" for x in samples["experiment"]],
         # [f"sptxt_csv/{x}.iproph.pp.sptxt.csv" for x in samples["experiment"]],
-        [f"mokapot_spectrast/concensus_{x}.mokapot.psms.spidx" for x in samples["experiment"]],
+        [f"mokapot_spectrast/concensus_{x}.ce.mokapot.psms.spidx" for x in samples["experiment"]],
 
 rule crap_fasta:
     output:

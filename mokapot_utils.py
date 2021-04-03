@@ -35,7 +35,6 @@ def filter_mokapot_psm(psm_input: str, peptide_input: str):
 def psm_df_to_tsv(df: pd.DataFrame, output: str):
     # TODO change this so it uses column names
     index_order = [0, 2, 5, 9, 7, 6]
-    df = pd.read_table(str(input))
     df['Peptide'] = [x.replace("[", "[+") for x in df['Peptide']]
     df['Charge'] = ["_".join(line.split("_")[-2]) for line in df['SpecId']]
     df['Peptide'] = [f"{x}/{y}" for x, y in zip(df['Peptide'], df['Charge'])]
