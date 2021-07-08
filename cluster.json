@@ -15,6 +15,11 @@
     {
         "time": "0:30:00"
     },
+    "mzml_scan_metadata":
+    {
+        "mem": "10G",
+        "time": "0:10:00"
+    },
     "comet_search":
     {
         "mem": "50G",
@@ -31,6 +36,12 @@
         "mem": "90G",
         "cpus-per-task": "4",
         "time": "4:00:00"
+    },
+    "mokapot_spectrast_concensus":
+    {
+        "mem": "5G",
+        "time": "4:00:00",
+        "cpus-per-task": "2"
     },
     "add_ce_info":
     {

@@ -2,11 +2,13 @@
 from collections import defaultdict
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import subprocess
 import pathlib
 import shutil
 from elfragmentador.spectra import sptxt_to_csv
-from mokapot_utils import filter_mokapot_psm, psm_df_to_tsv, add_spectrast_ce_info
+from mokapot_utils import filter_mokapot_psm, psm_df_to_tsv, add_spectrast_ce_info, split_mokapot_spectrast_in
+from spec_metadata import get_spec_metadata
 
 # This prevents the command failing without an x server
 import matplotlib as mpl
@@ -14,6 +16,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 from pyteomics import fasta
+from tqdm.auto import tqdm
 import mokapot
 
 in_tsv = config['tsv_file']
@@ -26,10 +29,12 @@ experiments = {k: v for k, v in zip(samples['experiment'], samples['comet_params
 
 exp_to_enzyme = defaultdict(lambda: list())
 exp_to_fasta = defaultdict(lambda: list())
+exp_to_sample = defaultdict(lambda: list())
 
-for k, v1, v2 in zip(samples['experiment'], samples['enzyme_regex'], samples['fasta']):
+for k, v1, v2, v3 in zip(samples['experiment'], samples['enzyme_regex'], samples['fasta'], samples['sample']):
     exp_to_enzyme[k].append(v1)
     exp_to_fasta[k].append(v2)
+    exp_to_sample[k].append(v3)
 
 exp_to_enzyme = {k:list(set(v)) for k, v in exp_to_enzyme.items()}
 exp_to_fasta = {k:list(set(v)) for k, v in exp_to_fasta.items()}
@@ -65,6 +70,7 @@ localrules:
     proteometools_fasta,
     # download_file,
     # convert_file,
+    # mzml_scan_metadata,
     comet_phospho_params,
     comet_gg_params,
     comet_proalanase_params,
@@ -72,6 +78,7 @@ localrules:
     experiment_fasta,
     # mokapot,
     mokapot_spectrast_in,
+    # split_mokapot_spectrast_in,
     # mokapot_spectrast,
     # interact,
     # peptideprophet,
@@ -87,7 +94,9 @@ rule all:
         # [f"spectrast/concensus_{x}.iproph.pp.sptxt" for x in samples["experiment"]],
         # [f"prosit_in/{x}.iproph.pp.sptxt" for x in samples["experiment"]],
         # [f"sptxt_csv/{x}.iproph.pp.sptxt.csv" for x in samples["experiment"]],
-        [f"mokapot_spectrast/concensus_{x}.ce.mokapot.psms.spidx" for x in samples["experiment"]],
+        dynamic([f"concensus_mokapot_spectrast/concensus_{x}.{{ce}}.mokapot.psms.spidx" for x in np.unique(samples["experiment"])]),
+        [f"raw_scan_metadata/{sample}.csv" for sample in samples["sample"]],
+
 
 rule crap_fasta:
     output:
@@ -222,6 +231,18 @@ rule convert_file:
         # For some reaso, the dockerized version fails when running it directly
         # in this script, so you have to hack it this way ...
         subprocess.run(['zsh', 'msconvert.bash', str(input)])
+
+
+rule mzml_scan_metadata:
+    input:
+        "raw/{sample}.mzML"
+    output:
+        "raw_scan_metadata/{sample}.csv"
+    run:
+        shell("mkdir -p raw_scan_metadata")
+        df = get_spec_metadata(str(input))
+        df.to_csv(str(output), index = False)
+
 
 def get_fasta(wildcards):
     return samp_to_fasta[wildcards.sample]
@@ -373,23 +394,40 @@ rule mokapot_spectrast_in:
         psm_input="mokapot/{experiment}.mokapot.psms.txt",
         peptide_input="mokapot/{experiment}.mokapot.peptides.txt",
     output:
-        "mokapot/{experiment}.spectrast.mokapot.psms.tsv",
+        "spectrast_in/{experiment}.spectrast.mokapot.psms.tsv",
     run:
+        shell("mkdir -p spectrast_in")
         df = filter_mokapot_psm(input.psm_input, input.peptide_input)
         psm_df_to_tsv(df, str(output))
 
+def get_exp_spec_metadata(wildcards):
+    samples = exp_to_sample[wildcards.experiment]
+    out = ["raw_scan_metadata/" + sample + ".csv" for sample in samples]
+    return out 
+
+
+rule split_mokapot_spectrast_in:
+    input:
+        spectrast_in = "spectrast_in/{experiment}.spectrast.mokapot.psms.tsv",
+        spec_metadata = get_exp_spec_metadata
+    output:
+        dynamic("split_spectrast_in/{experiment}.{n}.spectrast.mokapot.psms.tsv")
+    run:
+        shell("mkdir -p split_spectrast_in")
+        split_mokapot_spectrast_in(input.spectrast_in, input.spec_metadata, wildcards.experiment)
+        
 
 rule mokapot_spectrast:
     input:
         spectrast_usermods="spectrast_params/spectrast.usermods",
-        mokapot_in="mokapot/{experiment}.spectrast.mokapot.psms.tsv"
+        mokapot_in="split_spectrast_in/{experiment}.{n}.spectrast.mokapot.psms.tsv"
     output:
-        "mokapot_spectrast/{experiment}.mokapot.psms.sptxt",
-        "mokapot_spectrast/{experiment}.mokapot.psms.splib",
-        "mokapot_spectrast/{experiment}.mokapot.psms.pepidx",
-        "mokapot_spectrast/{experiment}.mokapot.psms.spidx",
+        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.sptxt",
+        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.splib",
+        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.pepidx",
+        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.spidx",
     benchmark:
-        "benchmarks/{experiment}.mokapot_spectrast.benchmark.txt"
+        "benchmarks/{experiment}.{n}.mokapot_spectrast.benchmark.txt"
     shell:
         "set -x ; set -e ; mkdir -p mokapot_spectrast ; "
         f"{TPP_DOCKER}"
@@ -398,33 +436,25 @@ rule mokapot_spectrast:
         " -cNmokapot_spectrast/{wildcards.experiment}.mokapot.psms"
         " {input.mokapot_in} ;"
 
-rule add_ce_info:
-    input:
-        "mokapot_spectrast/{experiment}.mokapot.psms.sptxt",
-    output:
-        "mokapot_spectrast/{experiment}.ce.mokapot.psms.sptxt",
-    run:
-        add_spectrast_ce_info('raw/', input, output)
-    
 
 rule mokapot_spectrast_concensus:
     input:
         spectrast_usermods="spectrast_params/spectrast.usermods",
-        sptxt="mokapot_spectrast/{experiment}.ce.mokapot.psms.sptxt",
+        splib="mokapot_spectrast/{experiment}.{n}.mokapot.psms.splib",
     output:
-        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.sptxt",
-        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.splib",
-        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.pepidx",
-        "mokapot_spectrast/concensus_{experiment}.ce.mokapot.psms.spidx"
+        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.sptxt",
+        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.splib",
+        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.pepidx",
+        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.spidx"
     benchmark:
-        "benchmarks/{experiment}.mokapot_spectrast_concensus.benchmark.txt"
+        "benchmarks/{experiment}.{n}.mokapot_spectrast_concensus.benchmark.txt"
     shell:
-        "set -x ; set -e ; mkdir -p mokapot_spectrast ; "
+        "set -x ; set -e ; mkdir -p concensus_mokapot_spectrast ; "
         f"{TPP_DOCKER}"
-        " spectrast -cr1 -cAC -c_DIS -M{input.spectrast_usermods}" 
-        " -Lmokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms.log"
-        " -cNmokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms"
-        " {input.sptxt}"
+        " spectrast -V -cr1 -cIHCD -cAC -c_DIS -M{input.spectrast_usermods}" 
+        " -Lconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms.log"
+        " -cNconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms"
+        " {input.splib}"
 
 
 rule interact:
