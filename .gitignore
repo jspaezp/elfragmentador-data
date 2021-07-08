@@ -2,3 +2,10 @@
 slurm*.out
 fasta/*.decoy.fasta
 fasta/*_contam.fasta
+comet/
+raw/
+.snamekame/
+benchmarks/
+mokapot/
+raw_scan_metadata/
+

@@ -34,8 +34,9 @@ def filter_mokapot_psm(psm_input: str, peptide_input: str):
 
 
 def psm_df_to_tsv(df: pd.DataFrame, output: str):
-    # TODO change this so it uses column names
-    index_order = [0, 2, 5, 9, 7, 6]
+    index_order = [
+        "SpecId",
+        "ScanNr",  "Peptide", "mokapot PEP", "mokapot score", "Proteins"]
     df['Peptide'] = [x.replace("[", "[+") for x in df['Peptide']]
     df['Charge'] = ["_".join(line.split("_")[-2]) for line in df['SpecId']]
     df['Peptide'] = [f"{x}/{y}" for x, y in zip(df['Peptide'], df['Charge'])]
@@ -74,6 +75,7 @@ def split_mokapot_spectrast_in(spectrast_in: str, spec_metadata_list: list, expe
     print("Reading Main DF")
     main_df = pd.read_csv(str(spectrast_in), sep = '\t')
     main_df = main_df.set_index(['SpecId', 'ScanNr'])
+    print(f"Columns: {list(main_df)}")
 
     print("Reading Secondary DFs")
     for sec_spec in tqdm(spec_metadata_list):
@@ -94,6 +96,7 @@ def split_mokapot_spectrast_in(spectrast_in: str, spec_metadata_list: list, expe
             main_df[ec.replace('_extra', '')] = replace_val
             del main_df[ec]
 
+    print(f"Columns: {list(main_df)}")
     print("Getting Unique collision Energies")
     unique_ce = np.unique(main_df['CollisionEnergy'])
     unique_ce = unique_ce[~np.isnan(unique_ce)]
@@ -101,8 +104,8 @@ def split_mokapot_spectrast_in(spectrast_in: str, spec_metadata_list: list, expe
 
     for ce in tqdm(unique_ce):
         out_name = f"{outdir}/{str(experiment)}.{str(ce).replace('.', '_')}.spectrast.mokapot.psms.tsv"
-        print(f"Saving {out_name}")
         tmp_df = main_df[ce == main_df['CollisionEnergy']].reset_index()[required_cols]
+        print(f"Saving {out_name}")
         # TODO add here removal of non-replicated spectra
         # TODO also consider if you could split when the file is too large
         tmp_df.to_csv(out_name, sep = "\t", index = False)

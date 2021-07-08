@@ -9,7 +9,7 @@ license = "Apache 2.0"
 python = ">=3.8,<3.10"
 snakemake = "^6.1.0"
 pandas = "^1.2.3"
-elfragmentador = {git = "https://github.com/jspaezp/elfragmentador.git", rev = "main"}
+elfragmentador = {git = "https://github.com/jspaezp/elfragmentador.git", rev = "devel"}
 llvmlite = "^0.36.0"
 mokapot = "^0.7.1"
 pyteomics = "^4.4.2"

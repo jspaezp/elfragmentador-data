@@ -414,7 +414,11 @@ rule split_mokapot_spectrast_in:
         dynamic("split_spectrast_in/{experiment}.{n}.spectrast.mokapot.psms.tsv")
     run:
         shell("mkdir -p split_spectrast_in")
-        split_mokapot_spectrast_in(input.spectrast_in, input.spec_metadata, wildcards.experiment)
+        print(input.spec_metadata)
+        split_mokapot_spectrast_in(
+            input.spectrast_in,
+            input.spec_metadata,
+            wildcards.experiment)
         
 
 rule mokapot_spectrast:
