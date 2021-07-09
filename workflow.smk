@@ -87,6 +87,7 @@ localrules:
     # spectrast,
     # generate_sptxt_csv,
     prosit_input,
+    aggregate_mokapot_sptxts,
 
 rule all:
     input:
@@ -94,8 +95,10 @@ rule all:
         # [f"spectrast/concensus_{x}.iproph.pp.sptxt" for x in samples["experiment"]],
         # [f"prosit_in/{x}.iproph.pp.sptxt" for x in samples["experiment"]],
         # [f"sptxt_csv/{x}.iproph.pp.sptxt.csv" for x in samples["experiment"]],
-        dynamic([f"concensus_mokapot_spectrast/concensus_{x}.{{ce}}.mokapot.psms.spidx" for x in np.unique(samples["experiment"])]),
+        # dynamic([f"concensus_mokapot_spectrast/concensus_{x}.{{ce}}.mokapot.psms.spidx" for x in np.unique(samples["experiment"])]),
+        [f"aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt" for experiment in np.unique(samples["experiment"])],
         [f"raw_scan_metadata/{sample}.csv" for sample in samples["sample"]],
+        [f"comet/{sample}.png" for sample in samples["sample"]],
 
 
 rule crap_fasta:
@@ -297,7 +300,6 @@ rule comet_search:
         # decoy_pepxml = "comet/{sample}.decoy.pep.xml", 
         forward_pepxml = "comet/{sample}.pep.xml",
         forward_pin = "comet/{sample}.pin",
-        decoy_plot = "comet/{sample}.png"
     benchmark:
         "benchmarks/{sample}.comet_search.benchmark.txt"
     run:
@@ -313,25 +315,34 @@ rule comet_search:
         shell(f"cp raw/{wildcards.sample}.pep.xml ./comet/.")
         shell(f"cp raw/{wildcards.sample}.pin ./comet/.")
 
+
+rule comet_decoy_plot:
+    input:
+        forward_pepxml = "comet/{sample}.pep.xml",
+        forward_pin = "comet/{sample}.pin",
+    output:
+        decoy_plot = "comet/{sample}.png"
+    run:
         # Plotting the xcorr distribution of decoys and targets
-        n = 28
-        chunked_df = pd.read_csv(
+        df = pd.read_csv(
             f"comet/{wildcards.sample}.pin",
+            index_col=False,
+            error_bad_lines=False,
             sep = "\t",
-            usecols=range(n),
-            lineterminator='\n', 
-            chunksize=1000)
+            usecols=['Xcorr', 'Label'],
+            lineterminator='\n')
+
+        print(df)
 
         tps = []
         fps = []
-        for df in chunked_df:
-            tps.extend([s for s,l in zip(df['Xcorr'], df['Label']) if l > 0])
-            fps.extend([s for s,l in zip(df['Xcorr'], df['Label']) if l < 0])
+	tps.extend([s for s,l in zip(df['Xcorr'], df['Label']) if l > 0])
+	fps.extend([s for s,l in zip(df['Xcorr'], df['Label']) if l < 0])
 
-        plt.hist(tps, alpha=0.8, color = 'cyan')
-        plt.hist(fps, alpha=0.8, color = 'magenta')
+        plt.hist(tps, bins=20, alpha=0.8, color = 'cyan')
+        plt.hist(fps, bins=20, alpha=0.8, color = 'magenta')
         plt.savefig(f"comet/{wildcards.sample}.png",)
-            
+
 
 def get_mokapot_ins(wildcards):
     outs = expand("comet/{sample}.pin", sample = get_samples(wildcards.experiment))
@@ -405,15 +416,15 @@ def get_exp_spec_metadata(wildcards):
     out = ["raw_scan_metadata/" + sample + ".csv" for sample in samples]
     return out 
 
-
-rule split_mokapot_spectrast_in:
+# Note that this is a checkpoint, not a rule
+checkpoint split_mokapot_spectrast_in:
     input:
         spectrast_in = "spectrast_in/{experiment}.spectrast.mokapot.psms.tsv",
         spec_metadata = get_exp_spec_metadata
     output:
-        dynamic("split_spectrast_in/{experiment}.{n}.spectrast.mokapot.psms.tsv")
+        split_files=directory("split_spectrast_in/{experiment}")
     run:
-        shell("mkdir -p split_spectrast_in")
+        shell(f"mkdir -p {output.split_files}")
         print(input.spec_metadata)
         split_mokapot_spectrast_in(
             input.spectrast_in,
@@ -424,27 +435,27 @@ rule split_mokapot_spectrast_in:
 rule mokapot_spectrast:
     input:
         spectrast_usermods="spectrast_params/spectrast.usermods",
-        mokapot_in="split_spectrast_in/{experiment}.{n}.spectrast.mokapot.psms.tsv"
+        mokapot_in="split_spectrast_in/{experiment}/{experiment}.{n}.spectrast.mokapot.psms.tsv"
     output:
-        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.sptxt",
-        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.splib",
-        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.pepidx",
-        "mokapot_spectrast/{experiment}.{n}.mokapot.psms.spidx",
+        "mokapot_spectrast/{experiment}/{experiment}.{n}.mokapot.psms.sptxt",
+        "mokapot_spectrast/{experiment}/{experiment}.{n}.mokapot.psms.splib",
+        "mokapot_spectrast/{experiment}/{experiment}.{n}.mokapot.psms.pepidx",
+        "mokapot_spectrast/{experiment}/{experiment}.{n}.mokapot.psms.spidx",
     benchmark:
         "benchmarks/{experiment}.{n}.mokapot_spectrast.benchmark.txt"
     shell:
         "set -x ; set -e ; mkdir -p mokapot_spectrast ; "
         f"{TPP_DOCKER}"
         " spectrast -V -cIHCD -M{input.spectrast_usermods}"
-        " -Lmokapot_spectrast/{wildcards.experiment}.mokapot.psms.log"
-        " -cNmokapot_spectrast/{wildcards.experiment}.mokapot.psms"
+        " -Lmokapot_spectrast/{wildcards.experiment}/{wildcards.experiment}.{wildcards.n}.mokapot.psms.log"
+        " -cNmokapot_spectrast/{wildcards.experiment}/{wildcards.experiment}.{wildcards.n}.mokapot.psms"
         " {input.mokapot_in} ;"
 
 
 rule mokapot_spectrast_concensus:
     input:
         spectrast_usermods="spectrast_params/spectrast.usermods",
-        splib="mokapot_spectrast/{experiment}.{n}.mokapot.psms.splib",
+        splib="mokapot_spectrast/{experiment}/{experiment}.{n}.mokapot.psms.splib",
     output:
         "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.sptxt",
         "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.splib",
@@ -456,9 +467,42 @@ rule mokapot_spectrast_concensus:
         "set -x ; set -e ; mkdir -p concensus_mokapot_spectrast ; "
         f"{TPP_DOCKER}"
         " spectrast -V -cr1 -cIHCD -cAC -c_DIS -M{input.spectrast_usermods}" 
-        " -Lconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms.log"
-        " -cNconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.ce.mokapot.psms"
+        " -Lconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.{wildcards.n}.mokapot.psms.log"
+        " -cNconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.{wildcards.n}.mokapot.psms"
         " {input.splib}"
+
+
+import os
+
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.split_mokapot_spectrast_in.get(**wildcards).output[0]
+    globbing_path = os.path.join(
+            checkpoint_output,
+            f"{wildcards.experiment}" + ".{n}.spectrast.mokapot.psms.tsv")
+    print(globbing_path)
+    globbed_wildcards = glob_wildcards(globbing_path)
+
+    print(globbed_wildcards)
+    globbed_wildcards = globbed_wildcards.n
+
+    print(globbed_wildcards)
+
+    out = expand(
+        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.sptxt",
+         experiment=wildcards.experiment,
+         n=globbed_wildcards)
+
+
+    return out
+
+
+rule aggregate_mokapot_sptxts:
+    input:
+        aggregate_input
+    output:
+        "aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt"
+    shell:
+        "cat {input} > {output}"
 
 
 rule interact:

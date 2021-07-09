@@ -34,16 +34,19 @@ def filter_mokapot_psm(psm_input: str, peptide_input: str):
 
 
 def psm_df_to_tsv(df: pd.DataFrame, output: str):
-    index_order = [
+    col_neworder = [
         "SpecId",
-        "ScanNr",  "Peptide", "mokapot PEP", "mokapot score", "Proteins"]
+        "ScanNr",
+        "Peptide",
+        "mokapot PEP",
+        "mokapot score",
+        "Proteins"]
     df['Peptide'] = [x.replace("[", "[+") for x in df['Peptide']]
     df['Charge'] = ["_".join(line.split("_")[-2]) for line in df['SpecId']]
     df['Peptide'] = [f"{x}/{y}" for x, y in zip(df['Peptide'], df['Charge'])]
     df['SpecId'] = ["_".join(line.split("_")[:-3]) for line in df['SpecId']]
     df['mokapot PEP'] = 1-df['mokapot PEP']
 
-    col_neworder = [list(df)[x] for x in index_order]
     df = df[col_neworder]
     df.to_csv(str(output), sep='\t', index=False)
     print(df)
@@ -60,7 +63,7 @@ def split_mokapot_spectrast_in(spectrast_in: str, spec_metadata_list: list, expe
     split_mokapot_spectrast_in(spectrast_in, spec_metadata_list, experiment = "testing")
     """
 
-    outdir = "split_spectrast_in"
+    outdir = f"split_spectrast_in/{experiment}"
     required_cols = ["SpecId",  "ScanNr",  "Peptide", "mokapot PEP", "mokapot score", "Proteins"]
     # TODO add generation of ssl file for bibliospec
     # https://skyline.ms/wiki/home/software/BiblioSpec/page.view?name=BiblioSpec%20input%20and%20output%20file%20formats
