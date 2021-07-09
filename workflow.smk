@@ -500,7 +500,7 @@ rule aggregate_mokapot_sptxts:
     input:
         aggregate_input
     output:
-        "aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt"
+        "aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt",
     shell:
         "cat {input} > {output}"
 

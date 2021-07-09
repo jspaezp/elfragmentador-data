@@ -40,7 +40,8 @@
     "mokapot_spectrast_concensus":
     {
         "mem": "5G",
-        "time": "4:00:00",
+        "time": "24:00:00",
+        "account": "pccr", 
         "cpus-per-task": "2"
     },
     "add_ce_info":
@@ -48,5 +49,11 @@
         "mem": "10G",
         "cpus-per-task": "1",
         "time":"4:00:00"
+    },
+    "comet_decoy_plot":
+    {
+        "mem": "24G",
+        "cpus-per-task": "1",
+        "time":"0:30:00"
     }
 }
