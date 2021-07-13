@@ -55,5 +55,17 @@
         "mem": "24G",
         "cpus-per-task": "1",
         "time":"0:30:00"
+    },
+    "generate_irt_csv":
+    {
+        "mem": "16G",
+        "cpus-per-task": "1",
+        "time":"0:30:00"
+    },
+    "calculate_irt_coefficients":
+    {
+        "mem": "16G",
+        "cpus-per-task": "1",
+        "time":"0:30:00"
     }
 }

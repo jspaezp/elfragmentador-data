@@ -6,7 +6,10 @@ import numpy as np
 import subprocess
 import pathlib
 import shutil
+
 from elfragmentador.spectra import sptxt_to_csv
+from elfragmentador.annotate import canonicalize_seq
+
 from mokapot_utils import filter_mokapot_psm, psm_df_to_tsv, add_spectrast_ce_info, split_mokapot_spectrast_in
 from spec_metadata import get_spec_metadata
 
@@ -89,16 +92,17 @@ localrules:
     prosit_input,
     aggregate_mokapot_sptxts,
 
+UNIQ_EXP = np.unique(samples["experiment"])
+
 rule all:
     input:
-        # [f"ind_spectrast/{x}.pp.sptxt" for x in samples["sample"]],
-        # [f"spectrast/concensus_{x}.iproph.pp.sptxt" for x in samples["experiment"]],
-        # [f"prosit_in/{x}.iproph.pp.sptxt" for x in samples["experiment"]],
-        # [f"sptxt_csv/{x}.iproph.pp.sptxt.csv" for x in samples["experiment"]],
-        # dynamic([f"concensus_mokapot_spectrast/concensus_{x}.{{ce}}.mokapot.psms.spidx" for x in np.unique(samples["experiment"])]),
-        [f"aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt" for experiment in np.unique(samples["experiment"])],
+        [f"aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt" for experiment in UNIQ_EXP],
+        [f"aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv" for experiment in UNIQ_EXP],
+        [f"aggregated_rt_sptxt_csv/{experiment}.mokapot.irt.sptxt.csv" for experiment in UNIQ_EXP],
         [f"raw_scan_metadata/{sample}.csv" for sample in samples["sample"]],
         [f"comet/{sample}.png" for sample in samples["sample"]],
+        [f"rt_csv/{experiment}.irt.csv" for experiment in np.unique(samples["experiment"])],
+        [f"aggregated_rt_sptxt_csv/{df_set}.mokapot.irt.sptxt.csv" for df_set in ("train", "test", "val")],
 
 
 rule crap_fasta:
@@ -400,6 +404,124 @@ rule mokapot:
             -r {wildcards.experiment} {input.pin_files} 
         """
 
+
+import pathlib
+import pandas as pd
+import elfragmentador.constants as CONSTANTS
+from elfragmentador.evaluate import polyfit, apply_polyfit
+import json
+
+def _read_spectrast_in(spectrast_in, only_irt=False):
+    df = pd.read_csv(spectrast_in, sep = "\t", usecols=['SpecId', "ScanNr", "Peptide"])
+    
+    # R.PCYCSSGCGSSCCQSSCCK.S/2 to 'PCYCSSGCGSSCCQSSCCK'
+    df['StripPeptide'] = [x[2:-4] for x in df['Peptide']]
+
+    if only_irt:
+        df = df[[x in CONSTANTS.IRT_PEPTIDES for x in df['StripPeptide']]].reset_index(drop=True)
+        df["iRT"] = [CONSTANTS.IRT_PEPTIDES[x]['irt'] for x in df['StripPeptide']]
+
+    df["File"] = [pathlib.Path(x).stem for x in df['SpecId']]
+    return df
+
+
+def calculate_irt_coefficients(spectrast_in, metadata_files):
+    """
+    Calculates the coefficients of a linear regression that fits
+    iRT ~ RT using irt peptides as reference
+    """
+
+    df = _read_spectrast_in(spectrast_in=spectrast_in, only_irt=True)
+
+    coefficients_dict = {}
+    for tmp_file_name, tmp_df in df.groupby("File"):
+        if len(tmp_df) < 5:
+            continue
+        curr_metadata_file_name = [x for x in metadata_files if tmp_file_name in x][0]
+        tmp_metadata_df = pd.read_csv(curr_metadata_file_name)
+        scan_times = {k: v for k,v in zip(tmp_metadata_df["ScanNr"], tmp_metadata_df["RetentionTime"])}
+        tmp_df["RT"] = [scan_times[x] for x in tmp_df["ScanNr"]]
+        fit_coefficients = polyfit(x = tmp_df["RT"], y = tmp_df["iRT"])
+        coefficients_dict[tmp_file_name] = fit_coefficients
+
+    return coefficients_dict
+
+
+def calculate_irt_spectrast_in(spectrast_in, coefficients_dict, metadata_files):
+    """Calculates the iRT of the spectra in a spectrast in, product from mokapot"""
+
+    df = _read_spectrast_in(spectrast_in=spectrast_in, only_irt=False)
+
+    outs = []
+
+    for tmp_file_name, tmp_df in df.groupby("File"):
+        curr_metadata_file_name = [x for x in metadata_files if tmp_file_name in x][0]
+        tmp_metadata_df = pd.read_csv(curr_metadata_file_name)
+        scan_times = {k: v for k,v in zip(tmp_metadata_df["ScanNr"], tmp_metadata_df["RetentionTime"])}
+        tmp_df["RT"] = [scan_times[x] for x in tmp_df["ScanNr"]]
+        poly = coefficients_dict.get(tmp_file_name, None)
+        if poly is None:
+            continue
+
+        poly = poly['polynomial']
+        tmp_df["iRT"] = apply_polyfit(tmp_df['RT'], polynomial=poly)
+        outs.append(tmp_df)
+    
+    concat_out = pd.concat(outs).reset_index(drop=True)
+
+    return concat_out
+
+
+def get_experiment_metadata_files(wildcards):
+    outs = expand(
+        "raw_scan_metadata/{sample}.csv",
+         sample = get_samples(wildcards.experiment))
+
+    return outs
+
+rule calculate_irt_coefficients:
+    input:
+        spectrast_in_tsv = "spectrast_in/{experiment}.spectrast.mokapot.psms.tsv",
+        metadata_files = get_experiment_metadata_files,
+    output:
+        "irt_coefficients/{experiment}.coefficients.json"
+    run:
+        coefficients_dict = calculate_irt_coefficients(
+            spectrast_in=input.spectrast_in_tsv,
+            metadata_files=input.metadata_files)
+        
+        with open(str(output), "w") as f:
+            json.dump(
+                coefficients_dict,
+                fp=f,
+                indent=2)
+    
+rule generate_irt_csv:
+    input:
+        spectrast_in_tsv = "spectrast_in/{experiment}.spectrast.mokapot.psms.tsv",
+        metadata_files = get_experiment_metadata_files,
+        coefficients_json = "irt_coefficients/{experiment}.coefficients.json"
+    output:
+        "rt_csv/{experiment}.irt.csv",
+    run:
+        with open(input.coefficients_json, "r") as f:
+            coefficients_dict = json.load(f)
+        
+        try:
+            out_df = calculate_irt_spectrast_in(
+                spectrast_in=input.spectrast_in_tsv,
+                coefficients_dict=coefficients_dict,
+                metadata_files=input.metadata_files)
+
+            out_df = out_df.groupby(["StripPeptide"])['iRT']
+            out_df = out_df.aggregate(["mean", "min", "max", "count"]).reset_index()
+
+            out_df.to_csv(str(output), index=False)
+        except ValueError as e:
+            print(f"Handling value error {e}, creating empty file")
+            pathlib.Path(str(output)).touch()
+
+
 rule mokapot_spectrast_in:
     input:
         psm_input="mokapot/{experiment}.mokapot.psms.txt",
@@ -469,7 +591,20 @@ rule mokapot_spectrast_concensus:
         " spectrast -V -cr1 -cIHCD -cAC -c_DIS -M{input.spectrast_usermods}" 
         " -Lconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.{wildcards.n}.mokapot.psms.log"
         " -cNconcensus_mokapot_spectrast/concensus_{wildcards.experiment}.{wildcards.n}.mokapot.psms"
-        " {input.splib}"
+        " {input.splib} ; "
+
+
+rule mokapot_sptxt_add_ce:
+    input:
+        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.sptxt",
+    output:
+        "ce_concensus_mokapot_spectrast/{experiment}.{n}.concensus.ce.mokapot.psms.sptxt",
+    run:
+        add_string = f"{wildcards.n}".replace('_', '.').replace('UNKNOWN', 'NaN')
+        add_string = f"CollisionEnergy={add_string}"
+        command_string = f"sed -e 's/Comment: /Comment: {add_string} /g' {input} > {output}"
+        print(command_string)
+        shell(command_string)
 
 
 import os
@@ -488,7 +623,7 @@ def aggregate_input(wildcards):
     print(globbed_wildcards)
 
     out = expand(
-        "concensus_mokapot_spectrast/concensus_{experiment}.{n}.mokapot.psms.sptxt",
+        "ce_concensus_mokapot_spectrast/{experiment}.{n}.concensus.ce.mokapot.psms.sptxt",
          experiment=wildcards.experiment,
          n=globbed_wildcards)
 
@@ -505,95 +640,11 @@ rule aggregate_mokapot_sptxts:
         "cat {input} > {output}"
 
 
-rule interact:
-    input:
-        # rv_file="comet/{sample}.decoy.pep.xml",
-        fw_file="comet/{sample}.pep.xml",
-        fasta_file=get_fasta
-    output:
-        "pp/{sample}.pep.xml"
-    shell:
-        "set -x ; set -e ; mkdir -p pp ; "
-        f"{TPP_DOCKER} "
-        "xinteract -G -N{output} -nP "
-        "{input.fw_file}"
-        # "{input.rv_file} {input.fw_file}"
-
-rule peptideprophet:
-    input:
-        "pp/{sample}.pep.xml"
-    output:
-        "pp/{sample}.pp.pep.xml"
-    shell:
-        """
-        set -e
-        set -x
-        cp {input} {output}
-        
-        """ + 
-        f"{TPP_DOCKER} " +
-        "PeptideProphetParser {output} ACCMASS DECOY=DECOY_ DECOYPROBS NONPARAM"
-
-rule indiv_spectrast:
-    input:
-        "pp/{sample}.pp.pep.xml"
-    output:
-        "ind_spectrast/{sample}.pp.sptxt",
-        "ind_spectrast/{sample}.pp.splib",
-        "ind_spectrast/{sample}.pp.pepidx",
-        "ind_spectrast/{sample}.pp.spidx"
-    shell:
-        "set -x ; set -e ; mkdir -p ind_spectrast ; "
-        f"{TPP_DOCKER}"
-        " spectrast -c_RDYDECOY_ -cP0.9 -cq0.01 -cIHCD" # " -Mspectrast.usermods"
-        " -Lind_spectrast/{wildcards.sample}.pp.log"
-        " -cNind_spectrast/{wildcards.sample}.pp {input}"
-
-def get_iproph_ins(wildcards):
-    outs = expand("pp/{sample}.pp.pep.xml", sample = get_samples(wildcards.experiment))
-    return outs
-
-rule iprophet:
-    input: get_iproph_ins
-    output:
-        "ip/{experiment}.iproph.pp.pep.xml"
-
-    shell:
-        "set -x ; set -e ; "
-        f"{TPP_DOCKER}"
-        "InterProphetParser THREADS=4 DECOY=DECOY NONSS NONSE"
-        " {input} {output}"
-
-# TODO check how to fix the issue where using interprophet destrys the model ...
-rule spectrast:
-    input:
-        "ip/{experiment}.iproph.pp.pep.xml"
-    output:
-        "spectrast/{experiment}.iproph.pp.sptxt",
-        "spectrast/{experiment}.iproph.pp.splib",
-        "spectrast/{experiment}.iproph.pp.pepidx",
-        "spectrast/{experiment}.iproph.pp.spidx",
-        "spectrast/concensus_{experiment}.iproph.pp.sptxt",
-        "spectrast/concensus_{experiment}.iproph.pp.splib",
-        "spectrast/concensus_{experiment}.iproph.pp.pepidx",
-        "spectrast/concensus_{experiment}.iproph.pp.spidx"
-    shell:
-        "set -x ; set -e ; mkdir -p spectrast ; "
-        f"{TPP_DOCKER}"
-        " spectrast -c_RDYDECOY_ -cP0.9 -cq0.01 -cIHCD" # " -Mspectrast.usermods"
-        " -Lspectrast/{wildcards.experiment}.iproph.pp.log"
-        " -cNspectrast/{wildcards.experiment}.iproph.pp {input} ;"
-        f"{TPP_DOCKER}"
-        " spectrast -cr1 -cAC -c_DIS " 
-        " -Lspectrast/concensus_{wildcards.experiment}.iproph.pp.log"
-        " -cNspectrast/concensus_{wildcards.experiment}.iproph.pp "
-        " spectrast/{wildcards.experiment}.iproph.pp.splib"
-
 rule generate_sptxt_csv:
     input:
-        "spectrast/{experiment}.iproph.pp.sptxt",
+        "aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt",
     output:
-        "sptxt_csv/{experiment}.iproph.pp.sptxt.csv"
+        "aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv",
     run:
         Path(str(output)).parent.mkdir(exist_ok=True)
         sptxt_to_csv(
@@ -602,6 +653,36 @@ rule generate_sptxt_csv:
             min_peaks=3,
             min_delta_ascore=20)
 
+
+rule add_rt_to_sptxt_csv:
+    input:
+        sptxt_df = "aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv",
+        irt_df = "rt_csv/{experiment}.irt.csv",
+    output:
+        "aggregated_rt_sptxt_csv/{experiment}.mokapot.irt.sptxt.csv"
+    run:
+        rt_df = pd.read_csv(input.irt_df)
+        sptxt_df = pd.read_csv(input.sptxt_df)
+        del sptxt_df['iRT']
+        rt_df['ModSequences'] = [canonicalize_seq(x) for x in rt_df['StripPeptide']]
+        rt_df = rt_df[['ModSequences', 'mean']].rename(columns={'mean': 'iRT'})
+        sptxt_df = sptxt_df.merge(rt_df, how = "left", on = "ModSequences")
+        sptxt_df.to_csv(str(output), index=False)
+
+rule combine_and_split_train:
+    input:
+        [f"aggregated_rt_sptxt_csv/{experiment}.mokapot.irt.sptxt.csv" for experiment in UNIQ_EXP]
+    output:
+        train_df = "aggregated_rt_sptxt_csv/train.mokapot.irt.sptxt.csv",
+        test_df = "aggregated_rt_sptxt_csv/test.mokapot.irt.sptxt.csv",
+        val_df = "aggregated_rt_sptxt_csv/val.mokapot.irt.sptxt.csv",
+    run:
+        df = pd.concat([pd.read_csv(str(x)) for x in input])
+        df_train, df_test, seq_train, seq_test = train_test_split(
+            df, df['Sequences'], stratify=df['Sequences'], test_size=0.4)
+        
+        df_test, df_val, seq_test, seq_val = train_test_split(
+             df_test, seq_test, stratify=seq_test, test_size=0.5)
 
 rule prosit_input:
     input:
