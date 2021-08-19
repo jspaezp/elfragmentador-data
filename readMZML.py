@@ -1,4 +1,3 @@
-
 from pyteomics.mzml import PreIndexedMzML
 
 raw_file = "20200708_EXPL5_nLC3_DS_SA_HeLa_ProAlanase_IS_02"
@@ -62,22 +61,38 @@ mzml = PreIndexedMzML(f"raw/{raw_file}.mzML")
 }
 """
 
-print(mzml['controllerType=0 controllerNumber=1 scan=11832']['precursorList']['precursor'][0]['activation'])
+print(
+    mzml["controllerType=0 controllerNumber=1 scan=11832"]["precursorList"][
+        "precursor"
+    ][0]["activation"]
+)
 """
 {'beam-type collision-induced dissociation': '', 'collision energy': 30.0}
 """
 
-print(mzml['controllerType=0 controllerNumber=1 scan=11832']['precursorList']['precursor'][0]['activation']['collision energy'])
+print(
+    mzml["controllerType=0 controllerNumber=1 scan=11832"]["precursorList"][
+        "precursor"
+    ][0]["activation"]["collision energy"]
+)
 """
 30.0
 """
 
-print(mzml['controllerType=0 controllerNumber=1 scan=11832']['scanList']['scan'][0]['filter string'])
+print(
+    mzml["controllerType=0 controllerNumber=1 scan=11832"]["scanList"]["scan"][0][
+        "filter string"
+    ]
+)
 """
 FTMS + p NSI d Full ms2 651.0649@hcd30.00 [100.0000-2014.2476]
 """
 
-print(mzml['controllerType=0 controllerNumber=1 scan=11832']['scanList']['scan'][0]['scan start time'])
+print(
+    mzml["controllerType=0 controllerNumber=1 scan=11832"]["scanList"]["scan"][0][
+        "scan start time"
+    ]
+)
 """
 19.047732521248
 """
@@ -86,15 +101,16 @@ from tqdm.auto import tqdm
 import shlex
 import time
 
+
 def add_ce_info(mzml_directory, in_sptxt, out_sptxt):
-    id_template = 'controllerType=0 controllerNumber=1 scan={scan_number}'
-    add_template = 'RetentionTime={rt} CollisionEnergy={ce}'
+    id_template = "controllerType=0 controllerNumber=1 scan={scan_number}"
+    add_template = "RetentionTime={rt} CollisionEnergy={ce}"
     mzml_dict = {}
-    with open(in_sptxt, 'r') as infile:
-        with open(out_sptxt, 'w') as outfile:
+    with open(in_sptxt, "r") as infile:
+        with open(out_sptxt, "w") as outfile:
             for i, l in enumerate(tqdm(infile)):
                 l = l.strip()
-                if l.startswith('Comment'):
+                if l.startswith("Comment"):
                     l_list = l.strip().split(" ")
                     """
                     try:
@@ -107,30 +123,31 @@ def add_ce_info(mzml_directory, in_sptxt, out_sptxt):
                         ))
                         # import pdb ; pdb.set_trace()
                     """
-                        
 
                     extra_left, extra_right = l_list[:-3], l_list[-3:]
-                    spectrum = [
-                        x for x in extra_left
-                        if x.startswith('RawSpectrum')
-                    ][0].split('=')[1].split('.')
+                    spectrum = (
+                        [x for x in extra_left if x.startswith("RawSpectrum")][0]
+                        .split("=")[1]
+                        .split(".")
+                    )
 
-                    raw_file = '.'.join(spectrum[:-2])
+                    raw_file = ".".join(spectrum[:-2])
                     spec_id = spectrum[-1]
-                    
+
                     if raw_file not in mzml_dict:
                         mzml_file = f"{mzml_directory}/{raw_file}.mzML"
                         mzml_dict[raw_file] = PreIndexedMzML(mzml_file)
-                    
-                    spec = mzml_dict[raw_file][id_template.format(scan_number=spec_id)]
-                    assert spec['ms level'] != 1
 
-                    ce = spec['precursorList']['precursor']
-                    ce = ce[0]['activation']['collision energy']
-                    rt = spec['scanList']['scan'][0]['scan start time']
+                    spec = mzml_dict[raw_file][id_template.format(scan_number=spec_id)]
+                    assert spec["ms level"] != 1
+
+                    ce = spec["precursorList"]["precursor"]
+                    ce = ce[0]["activation"]["collision energy"]
+                    rt = spec["scanList"]["scan"][0]["scan start time"]
                     addition = add_template.format(rt=rt, ce=ce)
-                    l = " ".join(extra_left+[addition]+extra_right)
+                    l = " ".join(extra_left + [addition] + extra_right)
 
                 outfile.write(l + "\n")
+
 
 add_ce_info("raw/", "./mokapot_spectrast/MannLabPhospho.mokapot.psms.sptxt", "foo.txt")

@@ -1,0 +1,2 @@
+sample	experiment	comet_params	enzyme_regex	fasta	server
+20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN1_R01	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/

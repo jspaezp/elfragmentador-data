@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import pandas as pd
 from pyteomics.mzml import PreIndexedMzML
@@ -17,24 +16,25 @@ def get_spec_metadata(mzml_path: str) -> pd.DataFrame:
         "ScanNr": [],
         "CollisionEnergy": [],
         "RetentionTime": [],
-        "SpecId": str(filename)
+        "SpecId": str(filename),
     }
 
     for spec in tqdm(mzml):
-        if spec['ms level'] == 1:
+        if spec["ms level"] == 1:
             continue
 
-        id = spec['id']
-        controller, cont_number, scan = [x.split('=')[1] for x in id.split(' ')]
-        ce = spec['precursorList']['precursor']
-        ce = ce[0]['activation']['collision energy']
-        rt = spec['scanList']['scan'][0]['scan start time']
+        id = spec["id"]
+        controller, cont_number, scan = [x.split("=")[1] for x in id.split(" ")]
+        ce = spec["precursorList"]["precursor"]
+        ce = ce[0]["activation"]["collision energy"]
+        rt = spec["scanList"]["scan"][0]["scan start time"]
 
-        df_dict['RetentionTime'].append(rt)
-        df_dict['CollisionEnergy'].append(ce)
-        df_dict['ScanNr'].append(scan)
+        df_dict["RetentionTime"].append(rt)
+        df_dict["CollisionEnergy"].append(ce)
+        df_dict["ScanNr"].append(scan)
 
-    return(pd.DataFrame(df_dict))
+    return pd.DataFrame(df_dict)
+
 
 if __name__ == "__main__":
     raw_file = "20200708_EXPL5_nLC3_DS_SA_HeLa_ProAlanase_IS_02"

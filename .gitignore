@@ -1,10 +1,23 @@
 
+ce_concensus_mokapot_**
+concensus_mokapot_**
+mokapot_spectrast**
+aggregated_rt_sptxt**
+exp_aggregated_**
+irt_coefficients**
+split_spectrast_in**
+zip_aggregated_**
+rt_csv**
+spectrast_in**
+aggregated/**
+
+__pycache__/**
 slurm*.out
 fasta/*.decoy.fasta
 fasta/*_contam.fasta
 comet/
 raw/
-.snamekame/
+.snakemake/**
 benchmarks/
 mokapot/
 raw_scan_metadata/
