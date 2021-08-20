@@ -168,7 +168,8 @@ top_changing <- filter(
   left_join(swapped_df_joint) %>%
   mutate(
       diff_mokapot_score = `mokapot score.EF` - `mokapot score.None`) %>%
-  arrange(-diff_mokapot_score) %>% 
+  arrange(-diff_mokapot_score) %>%
+  filter(Label == "Target") %>%
   top_n(10, diff_mokapot_score)
 
 write_csv(top_changing, params$output_top_swapped_psms)

@@ -38,6 +38,18 @@ rule biognosys_irt_fasta:
         """
 
 
+rule arabidopsis_fasta:
+    output:
+        "fasta/arabidopsis.fasta"
+    shell:
+        """
+        mkdir -p fasta
+        wget \
+            https://www.uniprot.org/uniprot/?query=proteome:UP000006548%20reviewed:yes\&format\=fasta \
+            -O fasta/arabidopsis.fasta
+        """
+
+
 rule human_fasta:
     output:
         "fasta/human.fasta",
