@@ -1,3 +1,4 @@
+import io
 from pyteomics.mzml import PreIndexedMzML
 import pandas as pd
 import numpy as np
@@ -170,13 +171,45 @@ def add_spectrast_ce_info(mzml_directory, in_sptxt, out_sptxt):
                 outfile.write(line + "\n")
 
 
+def parse_mokapot_log(path):
+    FEATURE_START_CONTENT = "Normalized feature weights in the learned model"
+    # FEATURE_START_CONTENT = "Feature   Weight"
+    FEATURE_END_CONTENT = "Done training."
+
+    in_feature_context = False
+    fold = 0
+    feature_list = []
+    df_list = []
+
+    with open(path, "r") as f:
+        for line in f:
+            if not in_feature_context:
+                if FEATURE_START_CONTENT in line:
+                    in_feature_context = True
+                    fold += 1
+            else:
+                if FEATURE_END_CONTENT in line:
+                    in_feature_context = False
+                    iostring = io.StringIO("\n".join(feature_list))
+                    tmp_df = pd.read_csv(iostring, delim_whitespace=True)
+                    tmp_df["Fold"] = fold
+                    df_list.append(tmp_df)
+                    feature_list = []
+                else:
+                    feature_list.append(line.replace("[INFO]", "").strip())
+
+    return pd.concat(df_list)
+
+
 if __name__ == "__main__":
-    spectrast_in = "spectrast_in/ProteomeToolsSP.spectrast.mokapot.psms.tsv"
-    spec_metadata_list = [
-        "raw_scan_metadata/01709a_GA9-TUM_second_pool_1_01_01-2xIT_2xHCD-1h-R1.csv",
-        "raw_scan_metadata/01748a_BF2-TUM_second_pool_48_01_01-3xHCD-1h-R1.csv",
-        "raw_scan_metadata/01748a_BG2-TUM_second_pool_49_01_01-2xIT_2xHCD-1h-R1.csv",
-        "raw_scan_metadata/01748a_BG2-TUM_second_pool_49_01_01-3xHCD-1h-R1.csv",
-    ]
-    experiment = "testing"
-    split_mokapot_spectrast_in(spectrast_in, spec_metadata_list, experiment)
+    # spectrast_in = "spectrast_in/ProteomeToolsSP.spectrast.mokapot.psms.tsv"
+    # spec_metadata_list = [
+    #     "raw_scan_metadata/01709a_GA9-TUM_second_pool_1_01_01-2xIT_2xHCD-1h-R1.csv",
+    #     "raw_scan_metadata/01748a_BF2-TUM_second_pool_48_01_01-3xHCD-1h-R1.csv",
+    #     "raw_scan_metadata/01748a_BG2-TUM_second_pool_49_01_01-2xIT_2xHCD-1h-R1.csv",
+    #     "raw_scan_metadata/01748a_BG2-TUM_second_pool_49_01_01-3xHCD-1h-R1.csv",
+    # ]
+    # experiment = "testing"
+    # split_mokapot_spectrast_in(spectrast_in, spec_metadata_list, experiment)
+
+    print(parse_mokapot_log("./mokapot/PEPTIDOME_EF2.mokapot.log"))

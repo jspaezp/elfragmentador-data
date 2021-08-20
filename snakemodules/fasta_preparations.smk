@@ -1,5 +1,6 @@
 from pyteomics import fasta
 
+
 rule crap_fasta:
     output:
         fasta="fasta/crap.fasta",

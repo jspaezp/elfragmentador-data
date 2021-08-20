@@ -41,4 +41,3 @@ rule mzml_scan_metadata:
         shell("mkdir -p raw_scan_metadata")
         df = get_spec_metadata(str(input))
         df.to_csv(str(output), index=False)
-

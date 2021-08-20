@@ -8,7 +8,7 @@ random.seed(42)
 
 # This prevents the command failing without an x server
 
-now = datetime.now() # current date and time
+now = datetime.now()  # current date and time
 timestamp = now.strftime("%Y%m%d_%H%M")
 
 in_tsv = config["tsv_file"]
@@ -60,40 +60,29 @@ localrules:
     contam_fasta,
     added_irt_fasta,
     proteometools_fasta,
-    # download_file,
-    # convert_file,
-    # mzml_scan_metadata,
     comet_phospho_params,
     comet_gg_params,
     comet_proalanase_params,
-    # comet_search,
     experiment_fasta,
-    # mokapot,
     mokapot_spectrast_in,
-    # split_mokapot_spectrast_in,
-    # mokapot_spectrast,
-    # interact,
-    # peptideprophet,
-    # indiv_spectrast,
-    # iprophet,
-    # spectrast,
-    # generate_sptxt_csv,
     prosit_input,
     aggregate_mokapot_sptxts,
 
 
 UNIQ_EXP = np.unique(samples["experiment"])
 
-include: "./fasta_preparations.smk"
-include: "./raw_file_operations.smk"
-include: "./search_operations.smk"
-include: "./spectrast_operations.smk"
-include: "./mokapot_operations.smk"
-include: "./irt_operations.smk"
-include: "./train_data_operations.smk"
+
+include: "./snakemodules/fasta_preparations.smk"
+include: "./snakemodules/raw_file_operations.smk"
+include: "./snakemodules/search_operations.smk"
+include: "./snakemodules/spectrast_operations.smk"
+include: "./snakemodules/mokapot_operations.smk"
+include: "./snakemodules/irt_operations.smk"
+include: "./snakemodules/train_data_operations.smk"
+include: "./snakemodules/elfragmentador_operations.smk"
 
 
-all_inputs = [
+common_inputs = [
     [
         f"aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt"
         for experiment in UNIQ_EXP
@@ -109,10 +98,14 @@ all_inputs = [
     [f"raw_scan_metadata/{sample}.csv" for sample in samples["sample"]],
     [f"comet/{sample}.xcorr.png" for sample in samples["sample"]],
     [f"comet/{sample}.lnexpect.png" for sample in samples["sample"]],
+    [f"rt_csv/{experiment}.irt.csv" for experiment in np.unique(samples["experiment"])],
     [
-        f"rt_csv/{experiment}.irt.csv"
+        f"mokapot/{experiment}.mokapot.weights.csv"
         for experiment in np.unique(samples["experiment"])
     ],
+]
+
+all_inputs = [
     [
         f"aggregated_rt_sptxt_csv/{df_set}.mokapot.irt.sptxt.csv"
         for df_set in ("train", "test", "val")
@@ -123,11 +116,40 @@ all_inputs = [
     ],
 ]
 
+eval_inputs = [
+    [f"ef_comet_pin/{sample}.elfragmentador.pin" for sample in samples["sample"]],
+    [
+        f"ef_mokapot/{experiment}.elfragmentador.mokapot.psms.txt"
+        for experiment in UNIQ_EXP
+    ],
+    [
+        f"ef_mokapot/{experiment}.elfragmentador.mokapot.weights.csv"
+        for experiment in np.unique(samples["experiment"])
+    ],
+    [
+        f"ef_reports/{experiment}.report.html"
+        for experiment in np.unique(samples["experiment"])
+    ],
+    [
+        f"ef_reports/{experiment}.swapped.top.csv"
+        for experiment in np.unique(samples["experiment"])
+    ],
+
+]
+
+
 print(all_inputs)
 
 rule all:
     input:
-        *all_inputs
+        *common_inputs,
+        *all_inputs,
+
+
+rule eval_all:
+    input:
+        *common_inputs,
+        *eval_inputs,
 
 
 rule prosit_input:

@@ -1,4 +1,6 @@
 
+poetry.lock
+
 ce_concensus_mokapot_**
 concensus_mokapot_**
 mokapot_spectrast**
@@ -10,6 +12,11 @@ zip_aggregated_**
 rt_csv**
 spectrast_in**
 aggregated/**
+
+ef_reports/**
+ef_mokapot/**
+ef_comet_pin/**
+notebooks/**
 
 __pycache__/**
 slurm*.out

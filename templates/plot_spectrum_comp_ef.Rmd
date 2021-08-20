@@ -1,0 +1,280 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+params:
+  elfragmentador_pin: ~/git/elfragmentador-data/comet/20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN1_R01.elfragmentador2.pin
+  decoy_psms_ef: ~/git/elfragmentador-data/mokapot/PEPTIDOME_EF2.mokapot.decoy.psms.txt
+  decoy_psms: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.psms.txt
+  psms_ef: ~/git/elfragmentador-data/mokapot/PEPTIDOME_EF2.mokapot.psms.txt
+  psms: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.decoy.psms.txt
+  model_importance: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.weights.csv
+  model_importance_ef: ~/git/elfragmentador-data/ef_mokapot/PEPTIDOME.elfragmentador.mokapot.weights.csv
+  output_swapped_psms: swapped_psms.csv
+  output_top_swapped_psms: swapped_psms.csv
+---
+
+```{r, setup, include=FALSE}
+# set this option in the first code chunk in the document
+knitr::opts_chunk$set(echo = params$printcode)
+```
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+```{r}
+pin_df <- readr::read_tsv(params$elfragmentador_pin)
+
+pin_df <- mutate(
+    pin_df, 
+    Label = ifelse(Label > 0, yes = "Target", no = "Decoy"))
+
+colnames(pin_df)
+```
+
+```{r}
+ggplot(pin_df, aes(x = Xcorr, y = SpecCorrelation, colour = factor(Label))) +
+    geom_point(alpha = 1, shape = ".")
+
+ggplot(pin_df, aes(x = log2(Sp + 1), y = SpecCorrelation, colour = factor(Label))) +
+    geom_point(alpha = 1, shape = ".") 
+
+ggplot(pin_df, aes(x = lnExpect, y = SpecCorrelation, colour = factor(Label))) +
+    geom_point(alpha = 1, shape = ".")
+
+```
+
+```{r}
+ggplot(
+    pin_df, 
+    aes(
+        y = Xcorr,
+        x = SpecCorrelation)) +
+    geom_hex(bins=100) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans="sqrt")
+
+ggplot(
+    pin_df, 
+    aes(
+        y = deltCn,
+        x = SpecCorrelation)) +
+    geom_hex(bins=50) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(direction = -1, trans="sqrt")
+
+
+ggplot(
+    pin_df, 
+    aes(
+        y = deltLCn,
+        x = SpecCorrelation)) +
+    geom_hex(bins=50) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(direction = -1, trans="sqrt")
+```
+
+```{r}
+pin_df %>% filter(Xcorr > 5)
+```
+
+
+```{r}
+ggplot(
+    pin_df, 
+    aes(
+        y = Xcorr,
+        x = SpecCorrelation)) +
+    geom_density_2d_filled(bins=20) + 
+    theme(legend.position = "None") +
+    facet_wrap(~ Label) 
+
+
+ggplot(
+    pin_df, 
+    aes(
+        y = Sp,
+        x = SpecCorrelation)) +
+    geom_density_2d_filled(bins=200) + 
+    theme(legend.position = "None") +
+    facet_wrap(~ Label) + scale_y_sqrt()
+```
+
+
+```{r}
+df <- bind_rows(
+    readr::read_tsv( params$psms_ef ) %>% select(-Proteins),
+    readr::read_tsv( params$decoy_psms_ef ) %>% select(-Proteins)
+    )
+
+
+df2 <- bind_rows(
+    readr::read_tsv( params$psms ) %>% select(-Proteins),
+    readr::read_tsv( params$decoy_psms ) %>% select(-Proteins)
+    )
+
+df_joint <- df %>% full_join(
+    df2,
+    by = c(
+        "SpecId", "Label", "ScanNr",
+        "ExpMass", "CalcMass",
+        "Peptide"),
+    suffix = c(".EF", ".None")) %>%
+    mutate(Label = ifelse(Label, yes = "Target", no = "Decoy"))
+```
+
+```{r}
+ggplot(
+    df_joint,
+    aes(
+        x = `mokapot PEP.None`,
+        y = `mokapot PEP.EF`)) +
+    geom_hex(bins=20)  +
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans = "log1p")
+
+
+ggplot(
+    df_joint %>%
+        filter(`mokapot PEP.None` < 0.05 | `mokapot PEP.EF` < 0.05 ),
+    aes(
+        x = `mokapot PEP.None`,
+        y = `mokapot PEP.EF`)) +
+    geom_hex(bins=20)  +
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans = "log1p")
+```
+
+```{r}
+swapped_df_joint <- df_joint %>%
+    filter(`mokapot PEP.None` < 0.01 | `mokapot PEP.EF` < 0.01) %>%
+    filter(`mokapot PEP.None` > 0.01 | `mokapot PEP.EF` > 0.01)
+
+write_csv(swapped_df_joint, params$output_swapped_psms)
+
+swapped_df_joint %>% arrange(`mokapot PEP.EF`) %>% head(200)
+
+```
+
+```{r}
+top_changing <- filter(
+  pin_df,
+  SpecId %in% filter(swapped_df_joint,
+  `mokapot PEP.EF` <= 0.01)$SpecId,
+  PepLen < 25) %>% 
+  left_join(swapped_df_joint) %>%
+  mutate(
+      diff_mokapot_score = `mokapot score.EF` - `mokapot score.None`) %>%
+  arrange(-diff_mokapot_score) %>% 
+  top_n(10, diff_mokapot_score)
+
+write_csv(top_changing, params$output_top_swapped_psms)
+print(top_changing)
+
+paste(top_changing$ScanNr, collapse = ", ")
+paste(top_changing$Peptide %>% gsub("^.\\.|\\..$", "", .), collapse = "', '")
+```
+```{r}
+top_5_xcorr <- top_n(pin_df, 5, Xcorr)
+print(top_5_xcorr)
+paste(top_5_xcorr$ScanNr, sep = "'",collapse = ", ")
+paste(top_5_xcorr$Peptide %>% gsub("^.\\.|\\..$", "", .), collapse = "', '", sep = "'")
+```
+
+
+```{r}
+ggplot(
+    pin_df,
+    aes(
+        y = Xcorr,
+        x = SpecCorrelation)) +
+    geom_hex(bins=100) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
+    geom_point(
+        color = "red",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` > 0.01)$SpecId)) +
+    geom_point(
+        color = "black",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` <= 0.01)$SpecId)) +
+    geom_point(
+        color = "blue",
+        size = 3,
+        data = filter(
+            pin_df,
+            SpecId %in% top_changing$SpecId))
+  
+
+ggplot(
+    pin_df,
+    aes(
+        y = lnExpect,
+        x = SpecCorrelation)) +
+    geom_hex(bins=100) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
+    geom_point(
+        color = "red",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` > 0.01)$SpecId)) +
+    geom_point(
+        color = "black",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` <= 0.01)$SpecId)) +
+    geom_point(
+        color = "blue",
+        size = 3,
+        data = filter(
+            pin_df,
+            SpecId %in% top_changing$SpecId))
+    
+
+```
+
+
+```{r}
+importances <- full_join(
+  readr::read_csv(params$model_importance),
+  readr::read_csv(params$model_importance_ef),
+  by = "Feature", suffix = c("Vanilla", "ElFragmentador"))
+
+
+importances$WeightVanilla[is.na(importances$WeightVanilla)] <- 0
+
+ggplot(importances, aes(y=Feature, x=WeightVanilla, xend=WeightElFragmentador)) +
+  ggalt::geom_dumbbell(size = 2, color="#BBBBBB", colour_x = "#CCCCCC", colour_xend = "black") +
+    ggtitle("Normalized feature weights in the learned model") 
+
+ggplot(importances, aes(y=Feature, x=WeightVanilla, xend=WeightElFragmentador)) +
+  ggalt::geom_dumbbell(size = 2, color="#BBBBBB", colour_x = "#CCCCCC", colour_xend = "black") +
+    ggtitle("Normalized feature weights in the learned model") +
+    coord_cartesian(xlim = c(-1.5, 2.0))
+
+ggplot(
+    importances,
+    aes(
+        y=Feature,
+        x=abs(WeightVanilla),
+        xend=abs(WeightElFragmentador))) +
+  ggalt::geom_dumbbell(
+      size = 2.5, 
+      color="#BBBBBB",
+      colour_x = "#CCCCCC",
+      colour_xend = "black") +
+    ggtitle("Abs Normalized feature weights in the learned model") +
+    scale_x_sqrt()
+```
+

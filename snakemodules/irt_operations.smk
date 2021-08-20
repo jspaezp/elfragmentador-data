@@ -2,12 +2,14 @@ import json
 import elfragmentador.constants as CONSTANTS
 from elfragmentador.math_utils import polyfit, apply_polyfit
 
+
 def get_experiment_metadata_files(wildcards):
     outs = expand(
         "raw_scan_metadata/{sample}.csv", sample=get_samples(wildcards.experiment)
     )
 
     return outs
+
 
 def _read_spectrast_in(spectrast_in, only_irt=False):
     df = pd.read_csv(spectrast_in, sep="\t", usecols=["SpecId", "ScanNr", "Peptide"])

@@ -21,7 +21,7 @@ mzml = PreIndexedMzML(f"raw/{raw_file}.mzML")
                 'scanWindow': [{
                     'scan window lower limit': 100.0,
                     'scan window upper limit': 2014.24755859375}]},
-            'scan start time': 19.047732521248,
+            'scan start time': 19.047732521248, ## x['scanList']['scan'][0]['scan start time']
             # ['scanList']['scan'][0]['filter string']
             'filter string': 'FTMS + p NSI d Full ms2 651.0649@hcd30.00 [100.0000-2014.2476]',
             'preset scan configuration': 2.0,
