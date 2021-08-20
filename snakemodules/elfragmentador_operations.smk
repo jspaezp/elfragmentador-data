@@ -57,8 +57,8 @@ rule generate_report:
         elfragmentador_pin=get_mokapot_ins("ef_comet_pin/", ".elfragmentador.pin"),
         decoy_psms_ef="mokapot/{experiment}.mokapot.decoy.psms.txt",
         decoy_psms="mokapot/{experiment}.mokapot.psms.txt",
-        psms_ef="mokapot/{experiment}.mokapot.psms.txt",
-        psms="mokapot/{experiment}.mokapot.decoy.psms.txt",
+        psms_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.psms.txt",
+        psms="ef_mokapot/{experiment}.elfragmentador.mokapot.decoy.psms.txt",
         model_importance="mokapot/{experiment}.mokapot.weights.csv",
         model_importance_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.weights.csv",
     output:
