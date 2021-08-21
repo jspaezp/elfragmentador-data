@@ -55,12 +55,12 @@ rule ef_mokapot_feature_weights:
 rule generate_report:
     input:
         elfragmentador_pin=get_mokapot_ins("ef_comet_pin/", ".elfragmentador.pin"),
-        decoy_psms_ef="mokapot/{experiment}.mokapot.decoy.psms.txt",
-        decoy_psms="mokapot/{experiment}.mokapot.psms.txt",
-        psms_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.psms.txt",
-        psms="ef_mokapot/{experiment}.elfragmentador.mokapot.decoy.psms.txt",
-        model_importance="mokapot/{experiment}.mokapot.weights.csv",
         model_importance_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.weights.csv",
+        decoy_psms_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.decoy.psms.txt",
+        psms_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.psms.txt",
+        model_importance="mokapot/{experiment}.mokapot.weights.csv",
+        decoy_psms="mokapot/{experiment}.mokapot.decoy.psms.txt",
+        psms="mokapot/{experiment}.mokapot.psms.txt",
     output:
         html="ef_reports/{experiment}.report.html",
         output_swapped_psms="ef_reports/{experiment}.swapped.csv",
@@ -84,6 +84,34 @@ rule generate_report:
                             model_importance_ef='{input.model_importance_ef}', \
                             output_swapped_psms='{output.output_swapped_psms}', \
                             output_top_swapped_psms='{output.output_top_swapped_psms}' \
+                        ), \
+                        output_file = '{output.html}', \
+                        clean = FALSE, \
+                        knit_root_dir = getwd(), \
+                        output_dir = 'ef_reports')" 
+                """
+        print(cmd)
+        shell(cmd)
+
+
+rule generate_roc_curves:
+    input:
+        psms_ef="ef_mokapot/{experiment}.elfragmentador.mokapot.psms.txt",
+        psms="mokapot/{experiment}.mokapot.psms.txt",
+    output:
+        html="ef_reports/{experiment}.roc_curves.html",
+    run:
+        cmd = """
+                set -x
+                set -e
+
+                mkdir -p ef_reports
+                R -e \
+                    "rmarkdown::render(\
+                        'templates/plot_roc_curves.Rmd',\
+                        params = list( \
+                            psms_ef='{input.psms_ef}', \
+                            psms='{input.psms}' \
                         ), \
                         output_file = '{output.html}', \
                         clean = FALSE, \

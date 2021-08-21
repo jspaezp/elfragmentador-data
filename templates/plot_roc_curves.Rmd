@@ -1,0 +1,55 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+params:
+  psms_ef: ~/git/elfragmentador-data/mokapot/PEPTIDOME_EF2.mokapot.psms.txt
+  psms: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.psms.txt
+---
+
+```{r, setup, include=FALSE}
+# set this option in the first code chunk in the document
+knitr::opts_chunk$set(echo = params$printcode)
+```
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+```{r}
+get_roc_curves <- function(x, added_name) {
+    df <- readr::read_tsv(x) %>%
+        arrange(`mokapot PEP`)
+
+    df$Sample <- added_name
+    df[["Accepted Target PSMS"]] <- cumsum(df$Label)
+    df <- select(df, `Accepted Target PSMS`, `mokapot PEP`, Sample)
+    return(df)
+}
+
+df <- bind_rows(
+    get_roc_curves(params$psms_ef, "ElFragmentador"),
+    get_roc_curves(params$psms, "Vanilla")
+)
+
+```
+
+```{r}
+head(df)
+```
+
+
+```{r fig.height=3, fig.width=5}
+df %>% arrange(`mokapot PEP`) %>%
+    filter(`mokapot PEP` < 0.07) %>%
+    ggplot(
+        aes(
+            x = `mokapot PEP`,
+            y = `Accepted Target PSMS`,
+            colour = Sample)) +
+    geom_line() +
+    coord_cartesian(xlim = c(0, 0.05))
+```
+

@@ -13,6 +13,10 @@ rt_csv**
 spectrast_in**
 aggregated/**
 
+templates/*.knit.md
+templates/*.utf8.md
+templates/*.html
+
 ef_reports/**
 ef_mokapot/**
 ef_comet_pin/**
