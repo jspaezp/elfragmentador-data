@@ -19,6 +19,15 @@ theme_set(theme_bw())
 ```
 
 ```{r}
+get_scores <- function(x, added_name) {
+    df <- readr::read_tsv(x) %>%
+        arrange(`mokapot PEP`)
+
+    df$Sample <- added_name
+    df <- select(df, `mokapot score`, `mokapot PEP`, Sample, Label)
+    return(df)
+}
+
 get_roc_curves <- function(x, added_name) {
     df <- readr::read_tsv(x) %>%
         arrange(`mokapot PEP`)
@@ -51,5 +60,15 @@ df %>% arrange(`mokapot PEP`) %>%
             colour = Sample)) +
     geom_line() +
     coord_cartesian(xlim = c(0, 0.05))
+```
+
+```{r fig.height=3, fig.width=5}
+df <- bind_rows(
+    get_scores(params$psms_ef, "ElFragmentador"),
+    get_scores(params$psms, "Vanilla")
+)
+
+ggplot(df, aes(x = `mokapot score`, fill=Sample)) +
+  geom_density(alpha = 0.3)
 ```
 

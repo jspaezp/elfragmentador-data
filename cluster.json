@@ -67,5 +67,11 @@
         "mem": "16G",
         "cpus-per-task": "1",
         "time":"0:30:00"
+    },
+    "elfragmentador_pin":
+    {
+        "mem": "16G",
+        "cpus-per-task": "10",
+        "time":"2:00:00"
     }
 }

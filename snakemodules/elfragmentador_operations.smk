@@ -22,7 +22,8 @@ rule elfragmentador_pin:
 
         elfragmentador_append_pin \
             --pin {input} \
-            --out {output.pin} |& tee {output.log} 
+            --out {output.pin} \
+            --threads {threads} |& tee {output.log} 
 
         """
 
@@ -92,6 +93,9 @@ rule generate_report:
                 """
         print(cmd)
         shell(cmd)
+
+        shell("python --csv {output.output_top_swapped_psms} --search_path . --prefix ef_reports/{wildcards.experiment}")
+
 
 
 rule generate_roc_curves:

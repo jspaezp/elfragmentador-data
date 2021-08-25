@@ -35,10 +35,12 @@ rule zip_and_timestamp:
         test_df="aggregated_rt_sptxt_csv/test.mokapot.irt.sptxt.csv",
         val_df="aggregated_rt_sptxt_csv/val.mokapot.irt.sptxt.csv",
     output:
-        train_df="zip_aggregated_rt_sptxt_csv/{timestamp}.train.mokapot.irt.sptxt.csv.tar.gz",
-        test_df="zip_aggregated_rt_sptxt_csv/{timestamp}.test.mokapot.irt.sptxt.csv.tar.gz",
-        val_df="zip_aggregated_rt_sptxt_csv/{timestamp}.val.mokapot.irt.sptxt.csv.tar.gz",
+        train_df="zip_aggregated_rt_sptxt_csv/{timestamp}.train.mokapot.irt.sptxt.csv.gz",
+        test_df="zip_aggregated_rt_sptxt_csv/{timestamp}.test.mokapot.irt.sptxt.csv.gz",
+        val_df="zip_aggregated_rt_sptxt_csv/{timestamp}.val.mokapot.irt.sptxt.csv.gz",
     run:
         Path(str(output[0])).parent.mkdir(exist_ok=True)
         for x, y in zip(input, output):
-            shell(f"tar -czf {str(y)} {str(x)}")
+            command = f"gzip -c {str(y)} > {str(x)}"
+            print(command)
+            shell(command)
