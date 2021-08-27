@@ -29,6 +29,7 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
         mokapot --verbosity 2 \
             --seed 2020 \
             --aggregate \
+            --subset_max_train 5000000 \
             --enzyme {{params.enzyme_regex}} \
             --decoy_prefix DECOY_ \
             --missed_cleavages 2 \

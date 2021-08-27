@@ -116,26 +116,21 @@ rule comet_decoy_plot:
 
         print(df)
 
-        tps = []
-        fps = []
+        decoys = df[df["Label"] < 0]
+        targets = df[df["Label"] > 0]
 
-        tps.extend([s for s, l in zip(df["Xcorr"], df["Label"]) if l > 0])
-        fps.extend([s for s, l in zip(df["Xcorr"], df["Label"]) if l < 0])
-
-        plt.hist(tps, bins=20, alpha=0.8, color="cyan")
-        plt.hist(fps, bins=20, alpha=0.8, color="magenta")
+        plt.hist(targets["Xcorr"], bins=20, alpha=0.8, color="cyan")
+        plt.hist(decoys["Xcorr"], bins=20, alpha=0.8, color="magenta")
+        plt.title("Xcorr Distribution (Targets are Cyan)")
         plt.savefig(
             f"comet/{wildcards.sample}.xcorr.png",
         )
+        plt.close()
 
-        tps = []
-        fps = []
-
-        tps.extend([s for s, l in zip(df["lnExpect"], df["Label"]) if l > 0])
-        fps.extend([s for s, l in zip(df["lnExpect"], df["Label"]) if l < 0])
-
-        plt.hist(tps, bins=20, alpha=0.8, color="cyan")
-        plt.hist(fps, bins=20, alpha=0.8, color="magenta")
+        plt.hist(targets["lnExpect"], bins=20, alpha=0.8, color="cyan")
+        plt.hist(decoys["lnExpect"], bins=20, alpha=0.8, color="magenta")
+        plt.title("lnExpect Distribution (Targets are Cyan)")
         plt.savefig(
             f"comet/{wildcards.sample}.lnexpect.png",
         )
+        plt.close()

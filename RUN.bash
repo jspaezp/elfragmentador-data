@@ -2,13 +2,16 @@
 for i in {1..1} ; do
     /scratch/brown/jpaezpae/conda_envs/ef_data3/bin/poetry \
         run snakemake \
-        -j 200 --cluster-config cluster.json \
+        -j 800 --cluster-config cluster.json \
         --cluster "sbatch -A {cluster.account} --mem={cluster.mem} -t {cluster.time} --cpus-per-task={cluster.cpus-per-task} -N {cluster.N}" \
         --local-cores 1 \
+        --reason \
+        --show-failed-logs \
         -s workflow.smk \
-        --config tsv_file=target_files/proteometools_ptm.tsv \
+        --config tsv_file=target_files/train_all.tsv \
         --rerun-incomplete
         # --keep-going \
+        # --verbose \
 done
 
 # test_target_files/small_sample_info.tsv
