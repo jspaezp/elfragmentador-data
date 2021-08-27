@@ -166,7 +166,6 @@ rule add_rt_to_sptxt_csv:
             del sptxt_df["iRT"]
             rt_df["ModSequences"] = [canonicalize_seq(x) for x in rt_df["StripPeptide"]]
             rt_df = rt_df[["ModSequences", "mean"]].rename(columns={"mean": "iRT"})
-            del sptxt_df["iRT"]
             sptxt_df = sptxt_df.merge(rt_df, how="left", on="ModSequences")
         except EmptyDataError as e:
             print("Not appending retention times.... because there are none")
