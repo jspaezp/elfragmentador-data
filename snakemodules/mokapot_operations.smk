@@ -29,7 +29,6 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
         mokapot --verbosity 2 \
             --seed 2020 \
             --aggregate \
-            --subset_max_train 5000000 \
             --enzyme {{params.enzyme_regex}} \
             --decoy_prefix DECOY_ \
             --missed_cleavages 2 \
@@ -40,6 +39,9 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
             -r {{wildcards.experiment}}{addition} \
             {{input.pin_files}} |& tee \
             {target_dir}/{{wildcards.experiment}}{addition}.mokapot.log
+
+            # --subset_max_train 5000000 
+            # This does not work right now on files with less than 5M psms....
 
         """
     out_str = base_str.format(target_dir=target_dir, addition=addition)

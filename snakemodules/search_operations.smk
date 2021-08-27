@@ -96,22 +96,34 @@ rule comet_search:
         shell(f"cp raw/{wildcards.sample}.pin ./comet/.")
 
 
+rule clip_comet_pin:
+    input:
+        forward_pin="comet/{sample}.pin",
+    output:
+        clipped_pin="comet/{sample}.clipped.pin",
+    shell:
+        """
+	grep -oP "^(\w+(\s|$)+){{28}}" \
+            {input} | \
+            sed -e "s/\s+$//g" > {output}
+        """
+
 rule comet_decoy_plot:
     input:
         forward_pepxml="comet/{sample}.pep.xml",
-        forward_pin="comet/{sample}.pin",
+        clipped_pin="comet/{sample}.clipped.pin",
     output:
         xcorr_plot="comet/{sample}.xcorr.png",
         expect_score="comet/{sample}.lnexpect.png",
     run:
-        # Plotting the xcorr distribution of decoys and targets
         df = pd.read_csv(
-            f"comet/{wildcards.sample}.pin",
+            str(input.clipped_pin),
             index_col=False,
             error_bad_lines=False,
             sep="\t",
             usecols=["Xcorr", "lnExpect", "Label"],
             lineterminator="\n",
+            low_memory=False,
         )
 
         print(df)
