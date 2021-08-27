@@ -26,6 +26,9 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
 
         mkdir -p {target_dir}
 
+        tot_line=$(cat {{input.pin_files}} | wc -l)
+        extras=$(python -c "if 5000000 < $tot_line: print(f'--subset_max_train 5000000')")
+
         mokapot --verbosity 2 \
             --seed 2020 \
             --aggregate \
@@ -34,7 +37,7 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
             --missed_cleavages 2 \
             --keep_decoys \
             --min_length 5 \
-            --max_length 50 \
+            --max_length 50 $extras \
             -d {target_dir} \
             -r {{wildcards.experiment}}{addition} \
             {{input.pin_files}} |& tee \

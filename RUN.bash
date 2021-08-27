@@ -7,6 +7,7 @@ for i in {1..1} ; do
         --local-cores 1 \
         --reason \
         --show-failed-logs \
+        --printshellcmds \
         -s workflow.smk \
         --config tsv_file=target_files/train_all.tsv \
         --rerun-incomplete
