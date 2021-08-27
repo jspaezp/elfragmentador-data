@@ -12,7 +12,7 @@ now = datetime.now()  # current date and time
 timestamp = now.strftime("%Y%m%d_%H%M")
 
 in_tsv = config["tsv_file"]
-samples = pd.read_table(in_tsv).set_index("sample", drop=False)
+samples = pd.read_table(in_tsv, comment="#").set_index("sample", drop=False)
 
 
 def get_samples(experiment):
