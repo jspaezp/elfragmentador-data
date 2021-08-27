@@ -27,7 +27,7 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
         mkdir -p {target_dir}
 
         tot_line=$(cat {{input.pin_files}} | wc -l)
-        extras=$(python -c "if 5000000 < $tot_line: print(f'--subset_max_train 5000000')")
+        extras=$(python -c "if 8000000 < $tot_line: print(f'--subset_max_train 5000000')")
 
         mokapot --verbosity 2 \
             --seed 2020 \
