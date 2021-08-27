@@ -1,0 +1,2 @@
+sample	experiment	comet_params	enzyme_regex	fasta	server
+02330a_GH3_3991_13_PTM_TrainKit_Pmod_Hydroxyproline_200fmol_survey_R1	Pmod_Hydroxyproline	comet_params/Pmod_Hydroxyproline.params.high_high	[KR]	fasta/proteometools_ptm_batch.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2018/06/PXD009449/

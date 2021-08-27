@@ -40,7 +40,7 @@ rule biognosys_irt_fasta:
 
 rule arabidopsis_fasta:
     output:
-        "fasta/arabidopsis.fasta"
+        "fasta/arabidopsis.fasta",
     shell:
         """
         mkdir -p fasta

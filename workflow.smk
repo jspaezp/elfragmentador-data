@@ -80,6 +80,7 @@ include: "./snakemodules/mokapot_operations.smk"
 include: "./snakemodules/irt_operations.smk"
 include: "./snakemodules/train_data_operations.smk"
 include: "./snakemodules/elfragmentador_operations.smk"
+include: "./snakemodules/ptm_operations.smk"
 
 
 common_inputs = [
@@ -138,11 +139,11 @@ eval_inputs = [
         f"ef_reports/{experiment}.swapped.top.csv"
         for experiment in np.unique(samples["experiment"])
     ],
-
 ]
 
 
 print(all_inputs)
+
 
 rule all:
     input:

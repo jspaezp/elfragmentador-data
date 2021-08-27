@@ -68,34 +68,35 @@ rule generate_report:
         output_top_swapped_psms="ef_reports/{experiment}.swapped.top.csv",
     run:
         cmd = """
-                set -x
-                set -e
+                        set -x
+                        set -e
 
-                mkdir -p ef_reports
-                R -e \
-                    "rmarkdown::render(\
-                        'templates/plot_spectrum_comp_ef.Rmd',\
-                        params = list( \
-                            elfragmentador_pin='{input.elfragmentador_pin}', \
-                            decoy_psms_ef='{input.decoy_psms_ef}', \
-                            decoy_psms='{input.decoy_psms}', \
-                            psms_ef='{input.psms_ef}', \
-                            psms='{input.psms}', \
-                            model_importance='{input.model_importance}', \
-                            model_importance_ef='{input.model_importance_ef}', \
-                            output_swapped_psms='{output.output_swapped_psms}', \
-                            output_top_swapped_psms='{output.output_top_swapped_psms}' \
-                        ), \
-                        output_file = '{output.html}', \
-                        clean = FALSE, \
-                        knit_root_dir = getwd(), \
-                        output_dir = 'ef_reports')" 
-                """
+                        mkdir -p ef_reports
+                        R -e \
+                            "rmarkdown::render(\
+                                'templates/plot_spectrum_comp_ef.Rmd',\
+                                params = list( \
+                                    elfragmentador_pin='{input.elfragmentador_pin}', \
+                                    decoy_psms_ef='{input.decoy_psms_ef}', \
+                                    decoy_psms='{input.decoy_psms}', \
+                                    psms_ef='{input.psms_ef}', \
+                                    psms='{input.psms}', \
+                                    model_importance='{input.model_importance}', \
+                                    model_importance_ef='{input.model_importance_ef}', \
+                                    output_swapped_psms='{output.output_swapped_psms}', \
+                                    output_top_swapped_psms='{output.output_top_swapped_psms}' \
+                                ), \
+                                output_file = '{output.html}', \
+                                clean = FALSE, \
+                                knit_root_dir = getwd(), \
+                                output_dir = 'ef_reports')" 
+                        """
         print(cmd)
         shell(cmd)
 
-        shell("python --csv {output.output_top_swapped_psms} --search_path . --prefix ef_reports/{wildcards.experiment}")
-
+        shell(
+            "python ./scripts/plot_top_n.py --csv {output.output_top_swapped_psms} --search_path . --prefix ef_reports/{wildcards.experiment}"
+        )
 
 
 rule generate_roc_curves:
@@ -106,21 +107,21 @@ rule generate_roc_curves:
         html="ef_reports/{experiment}.roc_curves.html",
     run:
         cmd = """
-                set -x
-                set -e
+                        set -x
+                        set -e
 
-                mkdir -p ef_reports
-                R -e \
-                    "rmarkdown::render(\
-                        'templates/plot_roc_curves.Rmd',\
-                        params = list( \
-                            psms_ef='{input.psms_ef}', \
-                            psms='{input.psms}' \
-                        ), \
-                        output_file = '{output.html}', \
-                        clean = FALSE, \
-                        knit_root_dir = getwd(), \
-                        output_dir = 'ef_reports')" 
-                """
+                        mkdir -p ef_reports
+                        R -e \
+                            "rmarkdown::render(\
+                                'templates/plot_roc_curves.Rmd',\
+                                params = list( \
+                                    psms_ef='{input.psms_ef}', \
+                                    psms='{input.psms}' \
+                                ), \
+                                output_file = '{output.html}', \
+                                clean = FALSE, \
+                                knit_root_dir = getwd(), \
+                                output_dir = 'ef_reports')" 
+                        """
         print(cmd)
         shell(cmd)
