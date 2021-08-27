@@ -40,7 +40,7 @@ rule zip_and_timestamp:
         val_df="zip_aggregated_rt_sptxt_csv/{timestamp}.val.mokapot.irt.sptxt.csv.gz",
     run:
         Path(str(output[0])).parent.mkdir(exist_ok=True)
-        for x, y in zip(input, output):
-            command = f"gzip -c {str(y)} > {str(x)}"
+        for inp, outp in zip(input, output):
+            command = f"gzip -c {str(inp)} > {str(outp)}"
             print(command)
             shell(command)
