@@ -42,7 +42,6 @@ def get_mokapot_command(target_dir="mokapot", addition=""):
 
         """
     out_str = base_str.format(target_dir=target_dir, addition=addition)
-    print(out_str)
 
     return out_str
 

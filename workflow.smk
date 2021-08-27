@@ -112,7 +112,7 @@ all_inputs = [
         for df_set in ("train", "test", "val")
     ],
     [
-        f"zip_aggregated_rt_sptxt_csv/{timestamp}.{df_set}.mokapot.irt.sptxt.csv.tar.gz"
+        f"zip_aggregated_rt_sptxt_csv/{timestamp}.{df_set}.mokapot.irt.sptxt.csv.gz"
         for df_set in ("train", "test", "val")
     ],
 ]
