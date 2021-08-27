@@ -27,6 +27,7 @@ slurm*.out
 fasta/*.decoy.fasta
 fasta/*_contam.fasta
 comet/
+comet_params/
 raw/
 .snakemake/**
 benchmarks/
