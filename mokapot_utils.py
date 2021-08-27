@@ -14,13 +14,17 @@ def filter_mokapot_psm(psm_input: str, peptide_input: str):
 
     df = pd.read_table(str(psm_input))
     pep_df = pd.read_table(str(peptide_input))
+    print(f"Filtering peptides for {str(psm_input)} {str(peptide_input)}")
     print(f"Pep df length {len(pep_df)}")
     pep_df = pep_df[
         (pep_df["mokapot q-value"] < 0.01) & (pep_df["mokapot PEP"] < 0.01)
     ]
     passed_peptides = set(pep_df["Peptide"])
+    print(f"Unique Peptides Passed {len(passed_peptides)}")
+    
+    if len(passed_peptides) == 0:
+        raise ValueError(f"Numbber of peptides that passed is 0 for {psm_input} {peptide_input}")
 
-    print(f"Unique Peptides {len(passed_peptides)}")
     print(f"Number of PSMs {len(df)}")
     df = df[(df["mokapot q-value"] < 0.01) & (df["mokapot PEP"] < 0.01)]
 
