@@ -103,7 +103,7 @@ rule clip_comet_pin:
         clipped_pin="comet/{sample}.clipped.pin",
     shell:
         """
-	grep -oP "^(\w+(\s|$)+){{28}}" \
+	grep -oP "^(\S+(\s|$)+){{28}}" \
             {input} | \
             sed -e "s/\s+$//g" > {output}
         """
