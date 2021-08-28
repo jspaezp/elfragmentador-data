@@ -126,7 +126,7 @@ rule proteometools_fasta:
 
 rule proteometools2_fasta:
     input:
-        "fasta/proteometools2/individual_peptide_procal.fasta",
+        "fasta/proteometools2/INDIVIDUAL_PEPTIDE_PROCAL.fasta",
         "fasta/proteometools2/{basename}.fasta",
     output:
         "fasta/{basename}_indiv_irt.fasta",

@@ -75,7 +75,7 @@ rule comet_nocleavage_params:
         """
 
 
-rule comet_nocleavage_params:
+rule comet_semitriptic_params:
     input:
         "comet_params/comet.params.high_high",
     output:

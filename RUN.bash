@@ -1,3 +1,4 @@
+#!/bin/bash
 
 for i in {1..1} ; do
     /scratch/brown/jpaezpae/conda_envs/ef_data3/bin/poetry \
@@ -9,8 +10,8 @@ for i in {1..1} ; do
         --show-failed-logs \
         --printshellcmds \
         -s workflow.smk \
-        --config tsv_file=target_files/train_all.tsv \
-        --rerun-incomplete
+        --config tsv_file=target_files/HLA_groups.tsv \
+        --rerun-incomplete ${@}
         # --keep-going \
         # --verbose \
 done
