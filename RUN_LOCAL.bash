@@ -3,10 +3,10 @@
 for i in {1..1} ; do
     /scratch/brown/jpaezpae/conda_envs/ef_data3/bin/poetry \
         run snakemake \
-        --cores 1 \
         --reason \
         --show-failed-logs \
         --printshellcmds \
+        --cores 1 \
         -s workflow.smk \
         --config tsv_file=target_files/HLA_groups.tsv \
         --rerun-incomplete ${@}

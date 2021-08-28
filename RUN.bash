@@ -3,12 +3,12 @@
 for i in {1..1} ; do
     /scratch/brown/jpaezpae/conda_envs/ef_data3/bin/poetry \
         run snakemake \
-        -j 800 --cluster-config cluster.json \
-        --cluster "sbatch -A {cluster.account} --mem={cluster.mem} -t {cluster.time} --cpus-per-task={cluster.cpus-per-task} -N {cluster.N}" \
-        --local-cores 1 \
         --reason \
         --show-failed-logs \
         --printshellcmds \
+        --local-cores 1 \
+        -j 800 --cluster-config cluster.json \
+        --cluster "sbatch -A {cluster.account} --mem={cluster.mem} -t {cluster.time} --cpus-per-task={cluster.cpus-per-task} -N {cluster.N}" \
         -s workflow.smk \
         --config tsv_file=target_files/HLA_groups.tsv \
         --rerun-incomplete ${@}
