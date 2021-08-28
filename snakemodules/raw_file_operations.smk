@@ -11,7 +11,7 @@ rule download_file:
         shell(
             (
                 f"wget {server}" + "/{wildcards.sample}.raw -O "
-                "{output} "
+                "{output} -nc " 
                 "--timeout=15 "
                 "--limit-rate=50m "
                 "--wait=5 "

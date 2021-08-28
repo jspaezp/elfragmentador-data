@@ -124,6 +124,16 @@ rule proteometools_fasta:
             fasta/crap.fasta > fasta/{wildcards.basename}_contam.fasta
         """
 
+rule proteometools2_fasta:
+    input:
+        "fasta/proteometools2/individual_peptide_procal.fasta",
+        "fasta/proteometools2/{basename}.fasta",
+    output:
+        "fasta/{basename}_indiv_irt.fasta",
+    shell:
+        """
+        cat {input} > {output}
+        """
 
 def get_exp_fasta(wildcards):
     print(wildcards)

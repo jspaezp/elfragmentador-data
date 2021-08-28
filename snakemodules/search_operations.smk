@@ -61,6 +61,32 @@ rule comet_peptidome_params:
         """
 
 
+rule comet_nocleavage_params:
+    input:
+        "comet_params/comet.params.high_high",
+    output:
+        "comet_params/comet.nocleavage.params.high_high"
+    shell:
+        """
+        cat {input} | \
+            sed -e "s/^search_enzyme_number.*/search_enzyme_number = 10/g" | \
+            sed -e "s/^10. Nothing.*/10. Nothing 1 Z -/g" \
+            | tee {output}
+        """
+
+
+rule comet_nocleavage_params:
+    input:
+        "comet_params/comet.params.high_high",
+    output:
+        "comet_params/comet.semitriptic.params.high_high"
+    shell:
+        """
+        cat {input} | \
+            sed -r "s/num_enzyme_termini.*/num_enzyme_termini = 9 /g" \
+            | tee {output}
+        """
+
 def get_fasta(wildcards):
     return samp_to_fasta[wildcards.sample]
 
