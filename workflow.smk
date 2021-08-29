@@ -51,6 +51,7 @@ localrules:
     # get list with $ grep -P "^rule" workflow.smk | sed -e "s/rule //g" | sed -e "s/:/,/g" 
     # and comment out the ones that should run in parallel in the cluster
     all,
+    download_file,
     crap_fasta,
     decoy_db,
     biognosys_irt_fasta,
@@ -88,6 +89,12 @@ include: "./snakemodules/train_data_operations.smk"
 include: "./snakemodules/elfragmentador_operations.smk"
 include: "./snakemodules/ptm_operations.smk"
 
+
+rule get_data:
+    input:
+        [f"raw/{sample}.raw" for sample in samples["sample"]],
+        [f"raw/{sample}.mzML" for sample in samples["sample"]],
+    
 
 common_inputs = [
     [
