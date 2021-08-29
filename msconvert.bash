@@ -5,7 +5,7 @@ set -e
 
 real_path=$(realpath $1)
 real_parent=$(dirname $real_path)
-mzml_path="$(echo $real_path | sed -e 's/.raw/.mzML/g')"
+mzml_path="$(echo $real_path | sed -e 's/.raw$/.mzML/g')"
 
 if [[ ! -z "$(command -v docker)" ]] ; then
     echo "Docker found, running native docker"
@@ -45,7 +45,4 @@ fi
 
 
 ls -lcth ${real_path}
-# cat ${file_base} > ./raw/${file_base}
-# rm -rf ${file_base}
 ls -lcth ${mzml_path}
-# touch "$(echo $1 | sed -e 's/.raw/.mzML/g')"
