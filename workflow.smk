@@ -13,6 +13,7 @@ timestamp = now.strftime("%Y%m%d_%H%M")
 
 in_tsv = config["tsv_file"]
 samples = pd.read_table(in_tsv, comment="#").set_index("sample", drop=False)
+print(samples)
 
 
 def get_samples(experiment):
@@ -90,12 +91,6 @@ include: "./snakemodules/elfragmentador_operations.smk"
 include: "./snakemodules/ptm_operations.smk"
 
 
-rule get_data:
-    input:
-        [f"raw/{sample}.raw" for sample in samples["sample"]],
-        [f"raw/{sample}.mzML" for sample in samples["sample"]],
-    
-
 common_inputs = [
     [
         f"aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt"
@@ -110,6 +105,7 @@ common_inputs = [
         for experiment in UNIQ_EXP
     ],
     [f"raw_scan_metadata/{sample}.csv" for sample in samples["sample"]],
+    [f"comet/{sample}.pin" for sample in samples["sample"]],
     [f"comet/{sample}.xcorr.png" for sample in samples["sample"]],
     [f"comet/{sample}.lnexpect.png" for sample in samples["sample"]],
     [f"rt_csv/{experiment}.irt.csv" for experiment in np.unique(samples["experiment"])],
@@ -169,6 +165,11 @@ rule eval_all:
         *common_inputs,
         *eval_inputs,
 
+rule get_data:
+    input:
+        [f"raw/{sample}.raw" for sample in samples["sample"]],
+        [f"raw/{sample}.mzML" for sample in samples["sample"]],
+    
 
 rule prosit_input:
     input:
