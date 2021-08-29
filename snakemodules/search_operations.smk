@@ -87,6 +87,33 @@ rule comet_semitriptic_params:
             | tee {output}
         """
 
+rule comet_TMT_params:
+    input:
+        "comet_params/comet.params.high_high",
+    output:
+        "comet_params/comet.TMT.params.high_high"
+    shell:
+        """
+        cat {input} | \
+            sed -e "s/variable_mod02 = 0.0 X 0 3 -1 0 0/variable_mod02 = 229.1629 nK 1 5 -1 0 0 0.0/g" \
+            | tee {output}
+        """
+
+
+rule nocleav_comet_TMT_params:
+    input:
+        "comet_params/comet.TMT.params.high_high"
+    output:
+        "comet_params/comet.TMT.nocleavage.params.high_high",
+    shell:
+        """
+        cat {input} | \
+            sed -e "s/^search_enzyme_number.*/search_enzyme_number = 10/g" | \
+            sed -e "s/^10. Nothing.*/10. Nothing 1 Z -/g" \
+            | tee {output}
+        """
+
+
 def get_fasta(wildcards):
     return samp_to_fasta[wildcards.sample]
 
