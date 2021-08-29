@@ -10,7 +10,7 @@ for i in {1..1} ; do
         -j 800 --cluster-config cluster.json \
         --cluster "sbatch -A {cluster.account} --mem={cluster.mem} -t {cluster.time} --cpus-per-task={cluster.cpus-per-task} -N {cluster.N}" \
         -s workflow.smk \
-        --config tsv_file=target_files/HLA_groups.tsv \
+        --config tsv_file=target_files/TMT_mod_files.tsv \
         --rerun-incomplete ${@}
         # --keep-going \
         # --verbose \

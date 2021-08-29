@@ -6,10 +6,10 @@ for i in {1..1} ; do
         --reason \
         --show-failed-logs \
         --printshellcmds \
-        --cores 1 \
+        --cores 2 \
         --keep-going \
         -s workflow.smk \
-        --config tsv_file=target_files/HLA_groups.tsv \
+        --config tsv_file=target_files/TMT_mod_files.tsv \
         --rerun-incomplete ${@} get_data
         # --verbose \
 done
