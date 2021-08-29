@@ -7,10 +7,10 @@ for i in {1..1} ; do
         --show-failed-logs \
         --printshellcmds \
         --cores 1 \
+        --keep-going \
         -s workflow.smk \
         --config tsv_file=target_files/HLA_groups.tsv \
         --rerun-incomplete ${@} get_data
-        # --keep-going \
         # --verbose \
 done
 
