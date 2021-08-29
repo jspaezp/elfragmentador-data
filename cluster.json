@@ -73,5 +73,11 @@
         "mem": "16G",
         "cpus-per-task": "10",
         "time":"2:00:00"
+    },
+    "generate_sptxt_csvh": 
+    {
+        "mem": "8G",
+        "cpus-per-task": "1",
+        "time": "4:00:00"
     }
 }

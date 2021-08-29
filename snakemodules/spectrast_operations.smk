@@ -3,7 +3,7 @@ import pathlib
 import pandas as pd
 from pandas.errors import EmptyDataError
 
-from elfragmentador.spectra import sptxt_to_csv
+from elfragmentador.spectra import SptxtReader
 from elfragmentador.annotate import canonicalize_seq
 from mokapot_utils import (
     filter_mokapot_psm,
@@ -136,16 +136,27 @@ rule aggregate_mokapot_sptxts:
     shell:
         "cat {input} > {output}"
 
+# Defined as ...
+#     if the string in the key matches the experiment name...
+#     run the command on the value with the sptxt as an argument
+ammendments = {
+    'Kmod_Trimethyl': 'sed -e "s+K.Acetyl.+K[TRIMETHYL]+g" -i ',
+}
 
+
+# TODO this task is trivially parallelizable ... make it happen ...
 rule generate_sptxt_csv:
     input:
         "aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt",
     output:
         "exp_aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv",
     run:
+        for k, v in ammendments.items():
+            if k in str(input):
+                shell(f'{v} {str(input)}')
+
         pathlib.Path(str(output)).parent.mkdir(exist_ok=True)
-        sptxt_to_csv(
-            filepath=str(input),
+        SptxtReader(filepath=str(input)).to_csv(
             output_path=str(output),
             min_peaks=3,
             min_delta_ascore=20,

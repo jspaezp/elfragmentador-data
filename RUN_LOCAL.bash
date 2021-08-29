@@ -8,7 +8,7 @@ for i in {1..1} ; do
         --printshellcmds \
         --cores 1 \
         -s workflow.smk \
-        --config tsv_file=target_files/HLA_groups.tsv \
+        --config tsv_file=target_files/train_all.tsv \
         --rerun-incomplete ${@}
         # --keep-going \
         # --verbose \
