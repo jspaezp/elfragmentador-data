@@ -74,6 +74,12 @@
         "cpus-per-task": "10",
         "time":"2:00:00"
     },
+    "combine_and_split_train":
+    {
+        "mem": "48G",
+        "cpus-per-task": "5",
+        "time":"4:00:00"
+    },
     "generate_sptxt_csvh": 
     {
         "mem": "8G",

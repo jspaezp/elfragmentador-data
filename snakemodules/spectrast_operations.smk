@@ -136,11 +136,12 @@ rule aggregate_mokapot_sptxts:
     shell:
         "cat {input} > {output}"
 
+
 # Defined as ...
 #     if the string in the key matches the experiment name...
 #     run the command on the value with the sptxt as an argument
 ammendments = {
-    'Kmod_Trimethyl': 'sed -e "s+K.Acetyl.+K[TRIMETHYL]+g" -i ',
+    "Kmod_Trimethyl": 'sed -e "s+K.Acetyl.+K[TRIMETHYL]+g" -i ',
 }
 
 
@@ -153,7 +154,7 @@ rule generate_sptxt_csv:
     run:
         for k, v in ammendments.items():
             if k in str(input):
-                shell(f'{v} {str(input)}')
+                shell(f"{v} {str(input)}")
 
         pathlib.Path(str(output)).parent.mkdir(exist_ok=True)
         SptxtReader(filepath=str(input)).to_csv(

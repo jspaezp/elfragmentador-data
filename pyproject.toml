@@ -19,6 +19,7 @@ elfragmentador = {git = "git@github.com:jspaezp/elfragmentador.git", rev = "main
 
 [tool.poetry.dev-dependencies]
 snakefmt = "^0.4.2"
+pyarrow = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

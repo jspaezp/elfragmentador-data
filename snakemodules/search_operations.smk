@@ -65,7 +65,7 @@ rule comet_nocleavage_params:
     input:
         "comet_params/comet.params.high_high",
     output:
-        "comet_params/comet.nocleavage.params.high_high"
+        "comet_params/comet.nocleavage.params.high_high",
     shell:
         """
         cat {input} | \
@@ -79,7 +79,7 @@ rule comet_semitriptic_params:
     input:
         "comet_params/comet.params.high_high",
     output:
-        "comet_params/comet.semitriptic.params.high_high"
+        "comet_params/comet.semitriptic.params.high_high",
     shell:
         """
         cat {input} | \
@@ -87,11 +87,12 @@ rule comet_semitriptic_params:
             | tee {output}
         """
 
+
 rule comet_TMT_params:
     input:
         "comet_params/comet.params.high_high",
     output:
-        "comet_params/comet.TMT.params.high_high"
+        "comet_params/comet.TMT.params.high_high",
     shell:
         """
         cat {input} | \
@@ -102,7 +103,7 @@ rule comet_TMT_params:
 
 rule nocleav_comet_TMT_params:
     input:
-        "comet_params/comet.TMT.params.high_high"
+        "comet_params/comet.TMT.params.high_high",
     output:
         "comet_params/comet.TMT.nocleavage.params.high_high",
     shell:
@@ -156,10 +157,11 @@ rule clip_comet_pin:
         clipped_pin="comet/{sample}.clipped.pin",
     shell:
         """
-	grep -oP "^(\S+(\s|$)+){{28}}" \
-            {input} | \
-            sed -e "s/\s+$//g" > {output}
+        grep -oP "^(\S+(\s|$)+){{28}}" \
+                {input} | \
+                sed -e "s/\s+$//g" > {output}
         """
+
 
 rule comet_decoy_plot:
     input:

@@ -12,6 +12,8 @@ rule elfragmentador_pin:
     output:
         pin="ef_comet_pin/{sample}.elfragmentador.pin",
         log="ef_comet_pin/{sample}.elfragmentador.pin.log",
+    params:
+        checkpoint=f"{CHECKPOINT}"
     shell:
         """
         set -e
@@ -23,8 +25,8 @@ rule elfragmentador_pin:
         poetry run elfragmentador_append_pin \
             --pin {input} \
             --out {output.pin} \
-            --model_checkpoint https://github.com/jspaezp/elfragmentador-modelzoo/raw/main/0.50.0a5_onecycle_5e_C_val_l%3D0.038469_epoch%3D004.ckpt
-            --threads {threads} |& tee {output.log} 
+            --threads {threads} \
+            --model_checkpoint {params.checkpoint} |& tee {output.log} 
 
         """
 
@@ -69,29 +71,29 @@ rule generate_report:
         output_top_swapped_psms="ef_reports/{experiment}.swapped.top.csv",
     run:
         cmd = """
-                        set -x
-                        set -e
+                                                set -x
+                                                set -e
 
-                        mkdir -p ef_reports
-                        R -e \
-                            "rmarkdown::render(\
-                                'templates/plot_spectrum_comp_ef.Rmd',\
-                                params = list( \
-                                    elfragmentador_pin='{input.elfragmentador_pin}', \
-                                    decoy_psms_ef='{input.decoy_psms_ef}', \
-                                    decoy_psms='{input.decoy_psms}', \
-                                    psms_ef='{input.psms_ef}', \
-                                    psms='{input.psms}', \
-                                    model_importance='{input.model_importance}', \
-                                    model_importance_ef='{input.model_importance_ef}', \
-                                    output_swapped_psms='{output.output_swapped_psms}', \
-                                    output_top_swapped_psms='{output.output_top_swapped_psms}' \
-                                ), \
-                                output_file = '{output.html}', \
-                                clean = FALSE, \
-                                knit_root_dir = getwd(), \
-                                output_dir = 'ef_reports')" 
-                        """
+                                                mkdir -p ef_reports
+                                                R -e \
+                                                    "rmarkdown::render(\
+                                                        'templates/plot_spectrum_comp_ef.Rmd',\
+                                                        params = list( \
+                                                            elfragmentador_pin='{input.elfragmentador_pin}', \
+                                                            decoy_psms_ef='{input.decoy_psms_ef}', \
+                                                            decoy_psms='{input.decoy_psms}', \
+                                                            psms_ef='{input.psms_ef}', \
+                                                            psms='{input.psms}', \
+                                                            model_importance='{input.model_importance}', \
+                                                            model_importance_ef='{input.model_importance_ef}', \
+                                                            output_swapped_psms='{output.output_swapped_psms}', \
+                                                            output_top_swapped_psms='{output.output_top_swapped_psms}' \
+                                                        ), \
+                                                        output_file = '{output.html}', \
+                                                        clean = FALSE, \
+                                                        knit_root_dir = getwd(), \
+                                                        output_dir = 'ef_reports')" 
+                                                """
         print(cmd)
         shell(cmd)
 
@@ -108,21 +110,21 @@ rule generate_roc_curves:
         html="ef_reports/{experiment}.roc_curves.html",
     run:
         cmd = """
-                        set -x
-                        set -e
+                                                set -x
+                                                set -e
 
-                        mkdir -p ef_reports
-                        R -e \
-                            "rmarkdown::render(\
-                                'templates/plot_roc_curves.Rmd',\
-                                params = list( \
-                                    psms_ef='{input.psms_ef}', \
-                                    psms='{input.psms}' \
-                                ), \
-                                output_file = '{output.html}', \
-                                clean = FALSE, \
-                                knit_root_dir = getwd(), \
-                                output_dir = 'ef_reports')" 
-                        """
+                                                mkdir -p ef_reports
+                                                R -e \
+                                                    "rmarkdown::render(\
+                                                        'templates/plot_roc_curves.Rmd',\
+                                                        params = list( \
+                                                            psms_ef='{input.psms_ef}', \
+                                                            psms='{input.psms}' \
+                                                        ), \
+                                                        output_file = '{output.html}', \
+                                                        clean = FALSE, \
+                                                        knit_root_dir = getwd(), \
+                                                        output_dir = 'ef_reports')" 
+                                                """
         print(cmd)
         shell(cmd)
