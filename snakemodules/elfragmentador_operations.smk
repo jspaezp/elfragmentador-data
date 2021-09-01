@@ -20,9 +20,10 @@ rule elfragmentador_pin:
 
         mkdir -p ef_comet_pin
 
-        elfragmentador_append_pin \
+        poetry run elfragmentador_append_pin \
             --pin {input} \
             --out {output.pin} \
+            --model_checkpoint https://github.com/jspaezp/elfragmentador-modelzoo/raw/main/0.50.0a5_onecycle_5e_C_val_l%3D0.038469_epoch%3D004.ckpt
             --threads {threads} |& tee {output.log} 
 
         """
