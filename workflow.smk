@@ -14,6 +14,8 @@ timestamp = now.strftime("%Y%m%d_%H%M")
 IN_TSV = config["tsv_file"]
 CHECKPOINT = config.get("checkpoint", None)
 
+print(CHECKPOINT)
+
 samples = pd.read_table(IN_TSV, comment="#").set_index("sample", drop=False)
 print(samples)
 

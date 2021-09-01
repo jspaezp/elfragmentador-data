@@ -12,7 +12,6 @@ import elfragmentador.model as efm
 from elfragmentador.spectra import Spectrum
 from elfragmentador.annotate import get_theoretical_mass
 
-model = efm.PepTransformerModel.load_from_checkpoint(ef.DEFAULT_CHECKPOINT)
 
 
 def read_spectrum_number(scan_id, file, sequence):
@@ -94,8 +93,11 @@ if __name__ == "__main__":
     parser.add_argument("--csv")
     parser.add_argument("--search_path")
     parser.add_argument("--prefix")
+    parser.add_argument("--checkpoint")
 
     args = parser.parse_args()
+
+    model = efm.PepTransformerModel.load_from_checkpoint(args.checkpoint)
     df = pd.read_csv(args.csv)
 
     for scan_id, peptide, spec_id in zip(df["ScanNr"], df["Peptide"], df["SpecId"]):
