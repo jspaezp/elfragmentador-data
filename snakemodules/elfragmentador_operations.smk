@@ -116,7 +116,6 @@ rule generate_roc_curves:
         html="ef_reports/{experiment}.roc_curves.html",
     run:
         cmd = (
-<<<<<<< HEAD
             " set -x ;                                         "
             " set -e ;                                         "
             " mkdir -p ef_reports ;                            "
@@ -131,7 +130,6 @@ rule generate_roc_curves:
             "         clean = FALSE,                           "
             "         knit_root_dir = getwd(),                 "
             "         output_dir = 'ef_reports')\"             "
-
         )
         print(cmd)
         shell(cmd)
