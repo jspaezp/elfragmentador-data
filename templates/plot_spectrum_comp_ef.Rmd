@@ -35,7 +35,7 @@ pin_df <- mutate(
 colnames(pin_df)
 ```
 
-```{r}
+```{r scores_vs_corr}
 ggplot(pin_df, aes(x = Xcorr, y = SpecCorrelation, colour = factor(Label))) +
     geom_point(alpha = 1, shape = ".")
 
@@ -47,7 +47,7 @@ ggplot(pin_df, aes(x = lnExpect, y = SpecCorrelation, colour = factor(Label))) +
 
 ```
 
-```{r}
+```{r scores_cs_corr2}
 ggplot(
     pin_df, 
     aes(
@@ -82,7 +82,7 @@ pin_df %>% filter(Xcorr > 5)
 ```
 
 
-```{r}
+```{r scores_vs_corr3}
 ggplot(
     pin_df, 
     aes(
@@ -126,7 +126,7 @@ df_joint <- df %>% full_join(
     mutate(Label = ifelse(Label, yes = "Target", no = "Decoy"))
 ```
 
-```{r}
+```{r scores_pre_post}
 ggplot(
     df_joint,
     aes(

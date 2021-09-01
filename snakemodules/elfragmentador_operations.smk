@@ -13,7 +13,7 @@ rule elfragmentador_pin:
         pin="ef_comet_pin/{sample}.elfragmentador.pin",
         log="ef_comet_pin/{sample}.elfragmentador.pin.log",
     params:
-        checkpoint=f"{CHECKPOINT}"
+        checkpoint=f"{CHECKPOINT}",
     shell:
         """
         set -e
@@ -116,6 +116,7 @@ rule generate_roc_curves:
         html="ef_reports/{experiment}.roc_curves.html",
     run:
         cmd = (
+<<<<<<< HEAD
             " set -x ;                                         "
             " set -e ;                                         "
             " mkdir -p ef_reports ;                            "
