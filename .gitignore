@@ -25,6 +25,7 @@ notebooks/**
 __pycache__/**
 slurm*.out
 fasta/*.decoy.fasta
+fasta/*indiv_irt.fasta
 fasta/*_contam.fasta
 comet/
 comet_params/

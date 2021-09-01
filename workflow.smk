@@ -11,8 +11,10 @@ random.seed(42)
 now = datetime.now()  # current date and time
 timestamp = now.strftime("%Y%m%d_%H%M")
 
-in_tsv = config["tsv_file"]
-samples = pd.read_table(in_tsv, comment="#").set_index("sample", drop=False)
+IN_TSV = config["tsv_file"]
+CHECKPOINT = config.get("checkpoint", None)
+
+samples = pd.read_table(IN_TSV, comment="#").set_index("sample", drop=False)
 print(samples)
 
 
@@ -121,6 +123,10 @@ all_inputs = [
         for df_set in ("train", "test", "val")
     ],
     [
+        f"aggregated_rt_sptxt_feather/{df_set}.mokapot.irt.sptxt.feather"
+        for df_set in ("train", "test", "val")
+    ],
+    [
         f"zip_aggregated_rt_sptxt_csv/{timestamp}.{df_set}.mokapot.irt.sptxt.csv.gz"
         for df_set in ("train", "test", "val")
     ],
@@ -165,11 +171,12 @@ rule eval_all:
         *common_inputs,
         *eval_inputs,
 
+
 rule get_data:
     input:
         [f"raw/{sample}.raw" for sample in samples["sample"]],
         [f"raw/{sample}.mzML" for sample in samples["sample"]],
-    
+
 
 rule prosit_input:
     input:
