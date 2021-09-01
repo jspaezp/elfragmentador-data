@@ -10,7 +10,9 @@ for i in {1..1} ; do
         -j 800 --cluster-config cluster.json \
         --cluster "sbatch -A {cluster.account} --mem={cluster.mem} -t {cluster.time} --cpus-per-task={cluster.cpus-per-task} -N {cluster.N}" \
         -s workflow.smk \
-        --config tsv_file=target_files/eval_peptidome_sample_info.tsv \
+        --config \
+            tsv_file=target_files/eval_peptidome_sample_info.tsv \
+            checkpoint="https://github.com/jspaezp/elfragmentador-modelzoo/raw/main/0.50.0a5_onecycle_5e_C_val_l%3D0.038469_epoch%3D004.ckpt" \
         --rerun-incomplete eval_all ${@}
         # --keep-going \
         # --verbose \

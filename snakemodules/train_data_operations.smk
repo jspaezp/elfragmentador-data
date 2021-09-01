@@ -29,12 +29,16 @@ rule combine_and_split_train:
 
         df_train = df[[seq_numbers[x] <= 0.4 for x in df["Sequences"]]]
         df_train = df_train.reset_index(drop=True)
-        print(f"Train dataset generated of length {len(df_train)}, {len(df)/len(df_train)}%")
+        print(
+            f"Train dataset generated of length {len(df_train)}, {len(df)/len(df_train)}%"
+        )
 
         df_test = df[
             [seq_numbers[x] > 0.4 and seq_numbers[x] <= 0.7 for x in df["Sequences"]]
         ].reset_index(drop=True)
-        print(f"Test dataset generated of length {len(df_test)}, {len(df)/len(df_test)}%")
+        print(
+            f"Test dataset generated of length {len(df_test)}, {len(df)/len(df_test)}%"
+        )
 
         df_val = df[
             [seq_numbers[x] > 0.7 and seq_numbers[x] <= 1.0 for x in df["Sequences"]]
