@@ -23,6 +23,7 @@ knitr::opts_chunk$set(echo = params$printcode)
 ```{r}
 print(params)
 library(tidyverse)
+library(hexbin)
 theme_set(theme_bw())
 ```
 
