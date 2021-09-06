@@ -73,29 +73,30 @@ rule generate_report:
     params:
         checkpoint=f"{CHECKPOINT}"
     run:
-        cmd = (
-                " set -x  ;                                                               "
-                " set -e  ;                                                               "
-                " mkdir -p ef_reports ;                                                   "
-                " R -e                                                                    "
-                "     \"rmarkdown::render(                                                "
-                "         'templates/plot_spectrum_comp_ef.Rmd',                          "
-                "         params = list(                                                  "
-                "             elfragmentador_pin='{input.elfragmentador_pin}',            "
-                "             decoy_psms_ef='{input.decoy_psms_ef}',                      "
-                "             decoy_psms='{input.decoy_psms}',                            "
-                "             psms_ef='{input.psms_ef}',                                  "
-                "             psms='{input.psms}',                                        "
-                "             model_importance='{input.model_importance}',                "
-                "             model_importance_ef='{input.model_importance_ef}',          "
-                "             output_swapped_psms='{output.output_swapped_psms}',         "
-                "             output_top_swapped_psms='{output.output_top_swapped_psms}'  "
-                "         ),                                                              "
-                "         output_file = '{output.html}',                                  "
-                "         clean = FALSE,                                                  "
-                "         knit_root_dir = getwd(),                                        "
-                "         output_dir = 'ef_reports')\"                                    "
-            )
+        cmd = [
+                " set -x  ;                                                               ",
+                " set -e  ;                                                               ",
+                " mkdir -p ef_reports ;                                                   ",
+                " R -e \"rmarkdown::render(                                               ",
+                "         'templates/plot_spectrum_comp_ef.Rmd',                          ",
+                "         params = list(                                                  ",
+                "             elfragmentador_pin='{input.elfragmentador_pin}',            ",
+                "             decoy_psms_ef='{input.decoy_psms_ef}',                      ",
+                "             decoy_psms='{input.decoy_psms}',                            ",
+                "             psms_ef='{input.psms_ef}',                                  ",
+                "             psms='{input.psms}',                                        ",
+                "             model_importance='{input.model_importance}',                ",
+                "             model_importance_ef='{input.model_importance_ef}',          ",
+                "             output_swapped_psms='{output.output_swapped_psms}',         ",
+                "             output_top_swapped_psms='{output.output_top_swapped_psms}'  ",
+                "         ),                                                              ",
+                "         output_file = '{output.html}',                                  ",
+                "         clean = FALSE,                                                  ",
+                "         knit_root_dir = getwd(), intermediates_dir=tempdir(),           ",
+                "         output_dir = 'ef_reports')\"                                    ",
+            ]
+
+        cmd = "".join([x.strip() for x in cmd])
         print(cmd)
         shell(cmd)
 
@@ -116,21 +117,21 @@ rule generate_roc_curves:
     output:
         html="ef_reports/{experiment}.roc_curves.html",
     run:
-        cmd = (
-            " set -x ;                                         "
-            " set -e ;                                         "
-            " mkdir -p ef_reports ;                            "
-            " R -e                                             "
-            "     \"rmarkdown::render(                         "
-            "         'templates/plot_roc_curves.Rmd',         "
-            "         params = list(                           "
-            "             psms_ef='{input.psms_ef}',           "
-            "             psms='{input.psms}'                  "
-            "         ),                                       "
-            "         output_file = '{output.html}',           "
-            "         clean = FALSE,                           "
-            "         knit_root_dir = getwd(),                 "
-            "         output_dir = 'ef_reports')\"             "
-        )
+        cmd = [
+            " set -x ;                                         ",
+            " set -e ;                                         ",
+            " mkdir -p ef_reports ;                            ",
+            " R -e  \"rmarkdown::render(                       ",
+            "         'templates/plot_roc_curves.Rmd',         ",
+            "         params = list(                           ",
+            "             psms_ef='{input.psms_ef}',           ",
+            "             psms='{input.psms}'                  ",
+            "         ),                                       ",
+            "         output_file = '{output.html}',           ",
+            "         clean = FALSE,                           ",
+            "         knit_root_dir = getwd(),                 ",
+            "         output_dir = 'ef_reports')\"             ",
+        ]
+        cmd = "".join([x.strip() for x in cmd])
         print(cmd)
         shell(cmd)

@@ -21,6 +21,7 @@ knitr::opts_chunk$set(echo = params$printcode)
 ```
 
 ```{r}
+print(params)
 library(tidyverse)
 theme_set(theme_bw())
 ```
@@ -33,6 +34,10 @@ pin_df <- mutate(
     Label = ifelse(Label > 0, yes = "Target", no = "Decoy"))
 
 colnames(pin_df)
+```
+
+```{r}
+head(pin_df)
 ```
 
 ```{r scores_vs_corr}
@@ -83,24 +88,24 @@ pin_df %>% filter(Xcorr > 5)
 
 
 ```{r scores_vs_corr3}
-ggplot(
-    pin_df, 
-    aes(
-        y = Xcorr,
-        x = SpecCorrelation)) +
-    geom_density_2d_filled(bins=20) + 
-    theme(legend.position = "None") +
-    facet_wrap(~ Label) 
+# ggplot(
+#     pin_df, 
+#     aes(
+#         y = Xcorr,
+#         x = SpecCorrelation)) +
+#     geom_density_2d_filled(bins=20) + 
+#     theme(legend.position = "None") +
+#     facet_wrap(~ Label) 
 
 
-ggplot(
-    pin_df, 
-    aes(
-        y = Sp,
-        x = SpecCorrelation)) +
-    geom_density_2d_filled(bins=200) + 
-    theme(legend.position = "None") +
-    facet_wrap(~ Label) + scale_y_sqrt()
+# ggplot(
+#     pin_df, 
+#     aes(
+#         y = Sp,
+#         x = SpecCorrelation)) +
+#     geom_density_2d_filled(bins=200) + 
+#     theme(legend.position = "None") +
+#     facet_wrap(~ Label) + scale_y_sqrt()
 ```
 
 
@@ -124,6 +129,10 @@ df_joint <- df %>% full_join(
         "Peptide"),
     suffix = c(".EF", ".None")) %>%
     mutate(Label = ifelse(Label, yes = "Target", no = "Decoy"))
+```
+
+```{r}
+head(df_joint)
 ```
 
 ```{r scores_pre_post}
