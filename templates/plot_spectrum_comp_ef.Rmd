@@ -41,13 +41,13 @@ head(pin_df)
 ```
 
 ```{r scores_vs_corr}
-ggplot(pin_df, aes(x = Xcorr, y = SpecCorrelation, colour = factor(Label))) +
+ggplot(pin_df, aes(x = Xcorr, y = SpecAngle, colour = factor(Label))) +
     geom_point(alpha = 1, shape = ".")
 
-ggplot(pin_df, aes(x = log2(Sp + 1), y = SpecCorrelation, colour = factor(Label))) +
+ggplot(pin_df, aes(x = log2(Sp + 1), y = SpecAngle, colour = factor(Label))) +
     geom_point(alpha = 1, shape = ".") 
 
-ggplot(pin_df, aes(x = lnExpect, y = SpecCorrelation, colour = factor(Label))) +
+ggplot(pin_df, aes(x = lnExpect, y = SpecAngle, colour = factor(Label))) +
     geom_point(alpha = 1, shape = ".")
 
 ```
@@ -57,7 +57,7 @@ ggplot(
     pin_df, 
     aes(
         y = Xcorr,
-        x = SpecCorrelation)) +
+        x = SpecAngle)) +
     geom_hex(bins=100) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(trans="sqrt")
@@ -66,7 +66,7 @@ ggplot(
     pin_df, 
     aes(
         y = deltCn,
-        x = SpecCorrelation)) +
+        x = SpecAngle)) +
     geom_hex(bins=50) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(direction = -1, trans="sqrt")
@@ -76,7 +76,7 @@ ggplot(
     pin_df, 
     aes(
         y = deltLCn,
-        x = SpecCorrelation)) +
+        x = SpecAngle)) +
     geom_hex(bins=50) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(direction = -1, trans="sqrt")
@@ -92,7 +92,7 @@ pin_df %>% filter(Xcorr > 5)
 #     pin_df, 
 #     aes(
 #         y = Xcorr,
-#         x = SpecCorrelation)) +
+#         x = SpecAngle)) +
 #     geom_density_2d_filled(bins=20) + 
 #     theme(legend.position = "None") +
 #     facet_wrap(~ Label) 
@@ -102,7 +102,7 @@ pin_df %>% filter(Xcorr > 5)
 #     pin_df, 
 #     aes(
 #         y = Sp,
-#         x = SpecCorrelation)) +
+#         x = SpecAngle)) +
 #     geom_density_2d_filled(bins=200) + 
 #     theme(legend.position = "None") +
 #     facet_wrap(~ Label) + scale_y_sqrt()
@@ -200,7 +200,7 @@ ggplot(
     pin_df,
     aes(
         y = Xcorr,
-        x = SpecCorrelation)) +
+        x = SpecAngle)) +
     geom_hex(bins=100) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
@@ -228,7 +228,7 @@ ggplot(
     pin_df,
     aes(
         y = lnExpect,
-        x = SpecCorrelation)) +
+        x = SpecAngle)) +
     geom_hex(bins=100) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
@@ -254,6 +254,64 @@ ggplot(
 
 ```
 
+```{r}
+ggplot(
+    pin_df,
+    aes(
+        y = Xcorr,
+        x = NormRTSqError)) +
+    geom_hex(bins=100) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
+    geom_point(
+        color = "red",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` > 0.01)$SpecId)) +
+    geom_point(
+        color = "black",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` <= 0.01)$SpecId)) +
+    geom_point(
+        color = "blue",
+        size = 3,
+        data = filter(
+            pin_df,
+            SpecId %in% top_changing$SpecId))
+  
+
+ggplot(
+    pin_df,
+    aes(
+        y = lnExpect,
+        x = NormRTSqError)) +
+    geom_hex(bins=100) + 
+    facet_wrap(~ Label) +
+    scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
+    geom_point(
+        color = "red",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` > 0.01)$SpecId)) +
+    geom_point(
+        color = "black",
+        size = 0.2,
+        data = filter(
+            pin_df,
+            SpecId %in% filter(swapped_df_joint, `mokapot PEP.EF` <= 0.01)$SpecId)) +
+    geom_point(
+        color = "blue",
+        size = 3,
+        data = filter(
+            pin_df,
+            SpecId %in% top_changing$SpecId))
+    
+
+```
 
 ```{r fig.height=3, fig.width=6}
 base_lm <- function(data) {
