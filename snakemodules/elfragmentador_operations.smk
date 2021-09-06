@@ -14,6 +14,7 @@ rule elfragmentador_pin:
         log="ef_comet_pin/{sample}.elfragmentador.pin.log",
     params:
         checkpoint=f"{CHECKPOINT}",
+    threads: 8
     shell:
         """
         set -e

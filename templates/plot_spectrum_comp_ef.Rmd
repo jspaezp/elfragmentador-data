@@ -246,36 +246,47 @@ ggplot(
 ```
 
 
-```{r}
-importances <- full_join(
-  readr::read_csv(params$model_importance),
-  readr::read_csv(params$model_importance_ef),
-  by = "Feature", suffix = c("Vanilla", "ElFragmentador"))
+```{r fig.height=3, fig.width=6}
+base_lm <- function(data) {
+  return(lm(Weight ~ Rescoring, data=data))
+}
 
+base_lm <- purrr::safely(base_lm)
 
-importances$WeightVanilla[is.na(importances$WeightVanilla)] <- 0
+pull_p <-  purrr::safely(function(safe_lm) {
+  summary(safe_lm$result)$coefficients[2,4]
+})
 
-ggplot(importances, aes(y=Feature, x=WeightVanilla, xend=WeightElFragmentador)) +
-  ggalt::geom_dumbbell(size = 2, color="#BBBBBB", colour_x = "#CCCCCC", colour_xend = "black") +
-    ggtitle("Normalized feature weights in the learned model") 
+importances <- bind_rows(
+  readr::read_csv(params$model_importance) %>% 
+      mutate(Rescoring = "Standard") ,
+  readr::read_csv(params$model_importance_ef) %>% 
+      mutate(Rescoring = "ElFragmentador")) %>%
+  complete(Feature, Fold, Rescoring, fill=list(Weight = 0)) %>%
+  group_by(Feature) %>%
+  nest() %>%
+  mutate(lm_res = purrr::map(data, base_lm)) %>%
+  mutate(lm_p = purrr::map(lm_res, pull_p)) %>%
+  mutate(p = purrr::map_dbl(lm_p, ~ .x$result)) %>%
+  unnest(data)
 
-ggplot(importances, aes(y=Feature, x=WeightVanilla, xend=WeightElFragmentador)) +
-  ggalt::geom_dumbbell(size = 2, color="#BBBBBB", colour_x = "#CCCCCC", colour_xend = "black") +
-    ggtitle("Normalized feature weights in the learned model") +
-    coord_cartesian(xlim = c(-1.5, 2.0))
+signif_importances <- importances %>%
+  filter(p < 0.05) %>% 
+  group_by(Feature) %>% 
+  arrange(max(abs(Weight)))
+
+signif_importances$Feature = with(signif_importances, reorder(Feature, abs(Weight)))
+
 
 ggplot(
-    importances,
-    aes(
-        y=Feature,
-        x=abs(WeightVanilla),
-        xend=abs(WeightElFragmentador))) +
-  ggalt::geom_dumbbell(
-      size = 2.5, 
-      color="#BBBBBB",
-      colour_x = "#CCCCCC",
-      colour_xend = "black") +
-    ggtitle("Abs Normalized feature weights in the learned model") +
-    scale_x_sqrt()
+  signif_importances, 
+  aes(y=Feature, x=abs(Weight), colour=Rescoring)) +
+  geom_line(alpha =0.1, size=2, aes(colour=NULL, fill=NULL)) +
+  geom_boxplot(
+    position = position_dodge(width=0.2), width = 0.8) +
+    ggtitle("Absolute Normalized feature\nweights in the Mokapot model") 
+
+
+
 ```
 

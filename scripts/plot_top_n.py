@@ -13,7 +13,6 @@ from elfragmentador.spectra import Spectrum
 from elfragmentador.annotate import get_theoretical_mass
 
 
-
 def read_spectrum_number(scan_id, file, sequence):
     reader = mzml.PreIndexedMzML(file)
     mzml_index = f"controllerType=0 controllerNumber=1 scan={scan_id}"

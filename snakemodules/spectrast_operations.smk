@@ -150,18 +150,22 @@ rule generate_sptxt_csv:
     input:
         "aggregated/{experiment}/aggregated_concensus_{experiment}.mokapot.sptxt",
     output:
-        "exp_aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv",
+        csv="exp_aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv",
+        feather="exp_aggregated_sptxt_feather/{experiment}.mokapot.sptxt.feather",
     run:
         for k, v in ammendments.items():
             if k in str(input):
                 shell(f"{v} {str(input)}")
 
-        pathlib.Path(str(output)).parent.mkdir(exist_ok=True)
-        SptxtReader(filepath=str(input)).to_csv(
-            output_path=str(output),
+        pathlib.Path(str(output.csv)).parent.mkdir(exist_ok=True)
+        pathlib.Path(str(output.feather)).parent.mkdir(exist_ok=True)
+        reader=SptxtReader(filepath=str(input))
+        reader.to_csv(
+            output_path=str(output.csv),
             min_peaks=3,
             min_delta_ascore=20,
         )
+        reader.to_feather(output_path=str(output.feather))
 
 
 rule add_rt_to_sptxt_csv:
