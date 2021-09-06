@@ -12,7 +12,7 @@ for i in {1..1} ; do
         -s workflow.smk \
         --config \
           tsv_file=target_files/eval_peptidome_sample_info.tsv \
-          checkpoint="https://github.com/jspaezp/elfragmentador-modelzoo/raw/main/0.50.0b7_onecycle_5e_C_val_l%3D0.166727_epoch%3D004.ckpt" \
+          checkpoint="https://github.com/jspaezp/elfragmentador-modelzoo/raw/main/0.50.0b14/0.50.0b14_onecycle_10e_64_120_val_l%3D0.141270_epoch%3D009.ckpt" \
         --rerun-incomplete eval_all ${@}
         # --keep-going \
         # --verbose \
