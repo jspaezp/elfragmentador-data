@@ -135,3 +135,29 @@ rule generate_roc_curves:
         cmd = "".join([x.strip() for x in cmd])
         print(cmd)
         shell(cmd)
+
+
+rule evaluation_on_psms:
+    input:
+        mokapot_psms="mokapot/{experiment}.mokapot.psms.txt",
+    output:
+        out_csv="ef_evaluation/{experiment}.csv",
+        log="ef_evaluation/{experiment}.log"
+    params:
+        checkpoint=f"{CHECKPOINT}",
+    threads: 8
+    run:
+        cmd = [
+            "mkdir -p ef_evaluation ; ",
+            " elframgentador_evaluate --input {input.feather} ",
+            " --batch_size 50 --max_spec 100000 ",
+            " --out_csv {output.out_csv} ",
+            " --model_checkpoint {params.checkpoint} ",
+            " --threads {threads} | tee {output.log}",
+        ]
+
+        cmd = "".join(cmd)
+        print(cmd)
+        shell(cmd)
+
+    

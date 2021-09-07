@@ -160,25 +160,27 @@ rule generate_sptxt_csv:
         pathlib.Path(str(output.csv)).parent.mkdir(exist_ok=True)
         pathlib.Path(str(output.feather)).parent.mkdir(exist_ok=True)
         reader=SptxtReader(filepath=str(input))
-        reader.to_csv(
-            output_path=str(output.csv),
+        df = reader.to_df(
             min_peaks=3,
             min_delta_ascore=20,
         )
-        reader.to_feather(output_path=str(output.feather))
+        df.to_csv(str(output.csv), index=False)
+        df.reset_index(drop=True).to_feather(str(output.feather))
+
 
 
 rule add_rt_to_sptxt_csv:
     input:
-        sptxt_df="exp_aggregated_sptxt_csv/{experiment}.mokapot.sptxt.csv",
+        sptxt_df="exp_aggregated_sptxt_feather/{experiment}.mokapot.sptxt.feather",
         irt_df="rt_csv/{experiment}.irt.csv",
     output:
-        "exp_aggregated_rt_sptxt_csv/{experiment}.mokapot.irt.sptxt.csv",
+        csv="exp_aggregated_rt_sptxt_csv/{experiment}.mokapot.irt.sptxt.csv",
+        feather="exp_aggregated_rt_sptxt_feather/{experiment}.mokapot.irt.sptxt.feather",
     run:
-        sptxt_df = pd.read_csv(input.sptxt_df)
+        sptxt_df = pd.read_feather(input.sptxt_df)
 
         try:
-            rt_df = pd.read_csv(input.irt_df)
+            rt_df = pd.read_feather(input.irt_df)
             del sptxt_df["iRT"]
             rt_df["ModSequences"] = [canonicalize_seq(x) for x in rt_df["StripPeptide"]]
             rt_df = rt_df[["ModSequences", "mean"]].rename(columns={"mean": "iRT"})
@@ -187,5 +189,7 @@ rule add_rt_to_sptxt_csv:
             print("Not appending retention times.... because there are none")
             print(e)
 
-        Path(str(output)).parent.mkdir(exist_ok=True)
-        sptxt_df.to_csv(str(output), index=False)
+        Path(str(output.csv)).parent.mkdir(exist_ok=True)
+        Path(str(output.feather)).parent.mkdir(exist_ok=True)
+        sptxt_df.to_csv(str(output.csv), index=False)
+        sptxt_df.reset_index(drop=True).to_feather(str(output.feather))

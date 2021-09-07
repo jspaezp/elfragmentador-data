@@ -137,6 +137,14 @@ all_inputs = [
 eval_inputs = [
     [f"ef_comet_pin/{sample}.elfragmentador.pin" for sample in samples["sample"]],
     [
+        f"ef_evaluation/{experiment}.csv"
+        for experiment in UNIQ_EXP
+    ],
+    [
+        f"ef_evaluation/{experiment}.log"
+        for experiment in UNIQ_EXP
+    ],
+    [
         f"ef_mokapot/{experiment}.elfragmentador.mokapot.psms.txt"
         for experiment in UNIQ_EXP
     ],
