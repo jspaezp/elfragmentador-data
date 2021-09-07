@@ -180,7 +180,7 @@ rule add_rt_to_sptxt_csv:
         sptxt_df = pd.read_feather(input.sptxt_df)
 
         try:
-            rt_df = pd.read_feather(input.irt_df)
+            rt_df = pd.read_csv(input.irt_df)
             del sptxt_df["iRT"]
             rt_df["ModSequences"] = [canonicalize_seq(x) for x in rt_df["StripPeptide"]]
             rt_df = rt_df[["ModSequences", "mean"]].rename(columns={"mean": "iRT"})
