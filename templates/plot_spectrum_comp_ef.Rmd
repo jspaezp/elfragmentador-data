@@ -4,13 +4,13 @@ output:
   html_document:
     df_print: paged
 params:
-  elfragmentador_pin: ~/git/elfragmentador-data/comet/20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN1_R01.elfragmentador2.pin
-  decoy_psms_ef: ~/git/elfragmentador-data/mokapot/PEPTIDOME_EF2.mokapot.decoy.psms.txt
-  decoy_psms: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.psms.txt
-  psms_ef: ~/git/elfragmentador-data/mokapot/PEPTIDOME_EF2.mokapot.psms.txt
-  psms: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.decoy.psms.txt
-  model_importance: ~/git/elfragmentador-data/mokapot/PEPTIDOME.mokapot.weights.csv
-  model_importance_ef: ~/git/elfragmentador-data/ef_mokapot/PEPTIDOME.elfragmentador.mokapot.weights.csv
+  elfragmentador_pin: ~/git/elfragmentador-data/ef_comet_pin/20170430_HeLa_phosp_DDA_B_01_170506194651.elfragmentador.pin
+  decoy_psms_ef: ~/git/elfragmentador-data/mokapot/phospho.mokapot.decoy.psms.txt
+  decoy_psms: ~/git/elfragmentador-data/mokapot/phospho.mokapot.psms.txt
+  psms_ef: ~/git/elfragmentador-data/mokapot/phospho.mokapot.psms.txt
+  psms: ~/git/elfragmentador-data/mokapot/phospho.mokapot.decoy.psms.txt
+  model_importance: ~/git/elfragmentador-data/mokapot/phospho.mokapot.weights.csv
+  model_importance_ef: ~/git/elfragmentador-data/ef_mokapot/phospho.elfragmentador.mokapot.weights.csv
   output_swapped_psms: swapped_psms.csv
   output_top_swapped_psms: swapped_psms.csv
 ---
@@ -52,6 +52,30 @@ ggplot(pin_df, aes(x = lnExpect, y = SpecAngle, colour = factor(Label))) +
     geom_point(alpha = 1, shape = ".")
 
 ```
+
+```{r fig.height=4, fig.width=5}
+
+ggplot(pin_df, aes(x = lnExpect, fill = factor(Label))) +
+  geom_histogram(alpha = 0.7, shape = ".") +
+  facet_wrap(~Label, ncol = 1) + scale_y_sqrt()
+
+ggplot(pin_df, aes(x = Xcorr, fill = factor(Label))) +
+  geom_histogram(alpha = 0.7, shape = ".") +
+  facet_wrap(~Label, ncol = 1) + scale_y_sqrt()
+
+ggplot(pin_df, aes(x = SpecAngle, fill = factor(Label))) +
+  geom_histogram(alpha = 0.7, shape = ".") +
+  facet_wrap(~Label, ncol = 1) + scale_y_sqrt()
+
+
+ggplot(pin_df, aes(x = NormRTSqError, fill = factor(Label))) +
+  geom_histogram(alpha = 0.7, shape = ".") +
+  facet_wrap(~Label, ncol = 1) + scale_y_sqrt() +
+  scale_y_sqrt()
+
+
+```
+
 
 ```{r scores_cs_corr2}
 ggplot(
