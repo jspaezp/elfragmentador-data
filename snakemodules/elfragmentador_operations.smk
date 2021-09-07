@@ -150,7 +150,7 @@ rule evaluation_on_psms:
         cmd = [
             "mkdir -p ef_evaluation ; ",
             " elfragmentador_evaluate --input {input.mokapot_psms} ",
-            " --batch_size 50 --max_spec 100000 ",
+            " --screen_nce='-10,-8,-6,-4,-2,0,2,4,6,8,10' --batch_size 50 --max_spec 100000 ",
             " --out_csv {output.out_csv} ",
             " --model_checkpoint {params.checkpoint} ",
             " --threads {threads} | tee {output.log}",
