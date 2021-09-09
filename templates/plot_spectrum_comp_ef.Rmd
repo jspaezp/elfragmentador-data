@@ -27,8 +27,11 @@ library(hexbin)
 theme_set(theme_bw())
 ```
 
+
 ```{r}
-pin_df <- readr::read_tsv(params$elfragmentador_pin)
+files <- unlist(strsplit(params$elfragmentador_pin, split="\\s+"), use.names = FALSE)
+
+pin_df <- bind_rows(purrr::map(files, readr::read_tsv))
 
 pin_df <- mutate(
     pin_df, 
