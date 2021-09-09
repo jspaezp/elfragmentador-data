@@ -83,8 +83,12 @@ unique_modifications
 
 ```{r}
 for (mod in unique_modifications) {
-    g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) + geom_point(shape = ".")
+    g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) + 
+      geom_point(shape = ".")
     g <- g + ggtitle(mod)
+    print(g)
+    
+    g <- g + geom_smooth()
     print(g)
 }
 mod
@@ -93,7 +97,8 @@ for (mod in unique_modifications) {
   tmp_df <- df %>% group_by(Peptide) %>% top_n(1, `mokapot score`)
 
   g <- ggplot(tmp_df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) +
-    geom_point(size=1, alpha=0.1)
+    geom_point(size=1, alpha=0.1) +
+    geom_smooth()
   g <- g + ggtitle(mod)
   print(g)
 }
@@ -101,7 +106,10 @@ for (mod in unique_modifications) {
 ```
 
 ```{r}
-df$residual_irt <- predict(lm(Prediction_irt ~ RetentionTime, data=df), newdata = df) - df$Prediction_irt
+my_lm <- mgcv::gam(RetentionTime ~ Prediction_irt, data=df %>% group_by(Peptide) %>% top_n(1, `mokapot score`))
+
+
+df$residual_irt <- predict(my_lm, newdata = df) - df$RetentionTime
 
 top_residuals <- df %>%
     top_n(200, abs(residual_irt)) %>% 
@@ -122,6 +130,12 @@ for (mod in unique_modifications) {
         max.overlaps = 20)
     g <- g + ggtitle(mod)
     print(g)
+    
+    g <- ggplot(df, aes(x = residual_irt, fill = grepl(mod, Peptide))) +
+      geom_histogram(bins = 100) + 
+      xlim(-20, 20)+ ggtitle(mod)
+    
+    print(g)
 }
 mod
 
@@ -138,11 +152,17 @@ for (pep in top_residuals$Peptide) {
     g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt)) + 
         geom_point(shape = ".") + 
         geom_point(data = weird_peptide)
-    g <- g + ggtitle(pep)
+    g <- g + ggtitle(pep, unique(weird_peptide$Proteins))
     print(g)
 }
 
 
+```
+
+```{r fig.height=4, fig.width=3}
+ggplot(df, aes(x = residual_irt)) +
+  geom_histogram(bins = 100) + 
+  xlim(-20, 20)
 ```
 
 
@@ -171,6 +191,16 @@ for (mod in unique_modifications) {
             aes(label = n, colour = ModifiedPeptide), position = position_dodge2(width=0.9, padding = 0.02))
     g <- g + ggtitle(mod) + ylim(0,1)
     print(g)
+    
+    g <- tmp_df2 %>%
+        ggplot(aes(x = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
+        geom_histogram(alpha=0.8,bins=100) +
+        geom_vline(xintercept = median(1 -tmp_df2$Loss_loss_angle)) +
+        geom_text(x = median(1 -tmp_df2$Loss_loss_angle), y = 50, label=median(1 -tmp_df2$Loss_loss_angle), inherit.aes = FALSE) +
+        xlim(0,1) + coord_cartesian(expand=FALSE)
+    g <- g + ggtitle(mod)
+    print(g)
+    
 }
 
 
