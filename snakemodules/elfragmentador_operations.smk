@@ -129,10 +129,10 @@ rule generate_roc_curves:
             "         ),                                       ",
             "         output_file = '{output.html}',           ",
             "         clean = FALSE,                           ",
-            "         knit_root_dir = getwd(),                 ",
+            "         knit_root_dir = getwd(), intermediates_dir=tempdir(),                 ",
             "         output_dir = 'ef_reports')\"             ",
         ]
-        cmd = "".join([x.strip() for x in cmd])
+        cmd = "".join([" " + x.strip() + " " for x in cmd])
         print(cmd)
         shell(cmd)
 
@@ -142,6 +142,7 @@ rule evaluation_on_psms:
         mokapot_psms="mokapot/{experiment}.mokapot.psms.txt",
     output:
         out_csv="ef_evaluation/{experiment}.csv",
+        out_csv2="ef_evaluation/{experiment}.csv.csv",
         log="ef_evaluation/{experiment}.log"
     params:
         checkpoint=f"{CHECKPOINT}",
@@ -161,3 +162,32 @@ rule evaluation_on_psms:
         shell(cmd)
 
     
+rule plot_error_rates:
+    input:
+        evaluation_psms_ef="ef_evaluation/{experiment}.csv.csv",
+        scan_metadata="mokapot/{experiment}.mokapot.psms.txt",
+    output:
+        html="ef_reports/{experiment}.plot_error_rates.html",
+        prosit_in="ef_evaluation_prosit/Input_{experiment}.csv",
+        prosit_filtered_psms="ef_evaluation_prosit/Comparisson_{experiment}.csv",
+    run:
+        cmd = [
+            " set -x ;                                         ",
+            " set -e ;                                         ",
+            " mkdir -p ef_reports ;                            ",
+            " R -e  \"rmarkdown::render(                       ",
+            "         'templates/plot_error_rates.Rmd',         ",
+            "         params = list(                           ",
+            "             psms='{input.evaluation_psms_ef}',           ",
+            "             scan_metadata='{input.scan_metadata}',           ",
+            "             out_prosit_in='{output.prosit_in}',           ",
+            "             out_psms_prosit_filtered='{output.prosit_filtered_psms}'                  ",
+            "         ),                                       ",
+            "         output_file = '{output.html}',           ",
+            "         clean = FALSE,                           ",
+            "         knit_root_dir = getwd(), intermediates_dir=tempdir(),                 ",
+            "         output_dir = 'ef_reports')\"             ",
+        ]
+        cmd = "".join([" " + x.strip() + " " for x in cmd])
+        print(cmd)
+        shell(cmd)

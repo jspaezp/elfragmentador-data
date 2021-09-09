@@ -161,6 +161,10 @@ eval_inputs = [
         for experiment in np.unique(samples["experiment"])
     ],
     [
+        f"ef_reports/{experiment}.plot_error_rates.html"
+        for experiment in np.unique(samples["experiment"])
+    ],
+    [
         f"ef_reports/{experiment}.swapped.top.csv"
         for experiment in np.unique(samples["experiment"])
     ],
