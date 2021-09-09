@@ -164,7 +164,7 @@ for (mod in unique_modifications) {
         
     
     g <- tmp_df2 %>%
-        ggplot(aes(x = PepLength, y = 1 -Loss_loss_angle, colour = ModifiedPeptide)) +
+        ggplot(aes(x = PepLength, y = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
         geom_boxplot(alpha=0.8, outlier.size = 0.5, outlier.alpha = 0.5) +
         geom_text(
             alpha = 1, data = count_df, y = 0.05,
@@ -187,7 +187,7 @@ for (mod in unique_modifications) {
       ungroup()
         
     
-    g <- tmp_df2 %>%
+    g <- tmp_df3 %>%
         ggplot(aes(x = PepLength, y = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
         geom_boxplot(alpha=0.8, outlier.size = 0.5, outlier.alpha = 0.5) +
         geom_text(
