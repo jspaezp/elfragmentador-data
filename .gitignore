@@ -16,14 +16,17 @@ aggregated/**
 templates/*.knit.md
 templates/*.utf8.md
 templates/*.html
+templates/.Rproj
 
 ef_reports/**
 ef_mokapot/**
 ef_comet_pin/**
+ef_evaluation/**
 notebooks/**
 
 __pycache__/**
 slurm*.out
+fasta/Uniprot/*
 fasta/*.decoy.fasta
 fasta/*indiv_irt.fasta
 fasta/*_contam.fasta

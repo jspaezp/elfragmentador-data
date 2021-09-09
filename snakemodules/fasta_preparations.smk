@@ -37,6 +37,16 @@ rule biognosys_irt_fasta:
             -O fasta/irtfusion.fasta
         """
 
+rule generic_uniprot_fasta:
+    output:
+        "fasta/Uniprot/{accession,UP[0-9]+}.fasta",
+    shell:
+        """
+        mkdir -p fasta/Uniprot
+        wget \
+            https://www.uniprot.org/uniprot/?query=proteome:{wildcards.accession}%20reviewed:yes\&format\=fasta \
+            -O {output}
+        """
 
 rule arabidopsis_fasta:
     output:
