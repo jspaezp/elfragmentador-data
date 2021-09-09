@@ -1,10 +1,10 @@
 
 include: "./mokapot_operations.smk"
 include: "./search_operations.smk"
+include: "./raw_file_operations.smk"
 
 
 import pathlib
-
 
 rule elfragmentador_pin:
     input:
@@ -165,7 +165,7 @@ rule evaluation_on_psms:
 rule plot_error_rates:
     input:
         evaluation_psms_ef="ef_evaluation/{experiment}.csv.csv",
-        scan_metadata="mokapot/{experiment}.mokapot.psms.txt",
+        scan_metadata=get_exp_spec_metadata,
     output:
         html="ef_reports/{experiment}.plot_error_rates.html",
         prosit_in="ef_evaluation_prosit/Input_{experiment}.csv",

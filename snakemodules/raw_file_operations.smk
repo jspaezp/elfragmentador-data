@@ -41,3 +41,9 @@ rule mzml_scan_metadata:
         shell("mkdir -p raw_scan_metadata")
         df = get_spec_metadata(str(input))
         df.to_csv(str(output), index=False)
+
+def get_exp_spec_metadata(wildcards):
+    samples = exp_to_sample[wildcards.experiment]
+    out = ["raw_scan_metadata/" + sample + ".csv" for sample in samples]
+    return out
+

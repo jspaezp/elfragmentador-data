@@ -14,12 +14,7 @@ from mokapot_utils import (
 
 
 include: "./env_setup.smk"
-
-
-def get_exp_spec_metadata(wildcards):
-    samples = exp_to_sample[wildcards.experiment]
-    out = ["raw_scan_metadata/" + sample + ".csv" for sample in samples]
-    return out
+include: "./raw_file_operations.smk"
 
 
 rule mokapot_spectrast_in:
