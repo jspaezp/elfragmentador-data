@@ -48,7 +48,8 @@ prosit_input_df <- df %>%
   mutate(
     charge = as.numeric(gsub("^.*_[0-9]+_([0-9]+)_[0-9]+", "\\1", SpecId)),
     sequence = gsub("M\\[15.9949\\]", "M(ox)", gsub("(^[A-Z-]{0,3}\\.)|(\\.[A-Z-]{0,3}$)", "",Peptide))) %>% 
-  filter(!grepl("\\[", sequence))
+  filter(!grepl("\\[", sequence)) %>%
+  filter(PepLength < 30)
 
 
 prosit_in <- prosit_input_df %>% select(
