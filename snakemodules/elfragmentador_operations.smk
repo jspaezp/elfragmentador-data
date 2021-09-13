@@ -191,3 +191,5 @@ rule plot_error_rates:
         cmd = "".join([" " + x.strip() + " " for x in cmd])
         print(cmd)
         shell(cmd)
+
+
