@@ -10,8 +10,8 @@ rule download_file:
         shell("mkdir -p raw")
         shell(
             (
-                f"wget {server}" + "/{wildcards.sample}.raw -O "
-                "{output} -nc "
+                f"wget '{server}" + "/{wildcards.sample}.raw' -O "
+                "'{output}' -nc "
                 "--timeout=15 "
                 "--limit-rate=50m "
                 "--wait=5 "
@@ -29,7 +29,7 @@ rule convert_file:
     run:
         # For some reaso, the dockerized version fails when running it directly
         # in this script, so you have to hack it this way ...
-        subprocess.run(["zsh", "msconvert.bash", str(input)])
+        subprocess.run(["zsh", "msconvert.bash", f"'{str(input)}'"])
 
 
 rule mzml_scan_metadata:

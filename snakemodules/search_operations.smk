@@ -141,13 +141,13 @@ rule comet_search:
             f"{TPP_DOCKER} "
             f"comet -P{str(input.comet_params)} "
             f"-D{str(input.fasta)} "
-            f"{str(input.raw)} "
+            f"'{str(input.raw)}' "
         )
 
         print(cmd)
         shell(cmd)
-        shell(f"cp raw/{wildcards.sample}.pep.xml ./comet/.")
-        shell(f"cp raw/{wildcards.sample}.pin ./comet/.")
+        shell(f"cp 'raw/{wildcards.sample}.pep.xml' ./comet/.")
+        shell(f"cp 'raw/{wildcards.sample}.pin' ./comet/.")
 
 
 rule clip_comet_pin:
@@ -158,8 +158,8 @@ rule clip_comet_pin:
     shell:
         """
         grep -oP "^(\S+(\s|$)+){{28}}" \
-                {input} | \
-                sed -e "s/\s+$//g" > {output}
+                "{input}" | \
+                sed -e "s/\s+$//g" > "{output}"
         """
 
 
