@@ -3,7 +3,7 @@
 set -x
 set -e
 
-real_path=$(realpath $1)
+real_path=$(realpath "$1")
 real_parent=$(dirname $real_path)
 mzml_path="$(echo $real_path | sed -e 's/.raw$/.mzML/g')"
 
@@ -16,7 +16,7 @@ if [[ ! -z "$(command -v docker)" ]] ; then
          -o /data/ --verbose \
         --filter "peakPicking true 1-" \
         --filter "activation HCD" \
-        --filter "analyzer FT" /data/$1
+        --filter "analyzer FT" "/data/$1"
 else
     echo "Docker not found, attempting singfularity run"
 
@@ -31,7 +31,7 @@ else
          --filter "activation HCD" \
          --filter "analyzer FT" \
          -o /data/ --verbose \
-         /data/$(basename $real_path)
+         "/data/$(basename $real_path)"
 
 
     # singularity exec --writable \

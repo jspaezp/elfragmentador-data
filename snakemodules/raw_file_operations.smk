@@ -29,7 +29,7 @@ rule convert_file:
     run:
         # For some reaso, the dockerized version fails when running it directly
         # in this script, so you have to hack it this way ...
-        subprocess.run(["zsh", "msconvert.bash", f"'{str(input)}'"])
+        subprocess.run(["zsh", "msconvert.bash", f"{str(input).replace(" ", "\ ")}"], check=True, capture_output=True)
 
 
 rule mzml_scan_metadata:
