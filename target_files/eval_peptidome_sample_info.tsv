@@ -1,10 +1,10 @@
 sample	experiment	comet_params	enzyme_regex	fasta	server
 20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN1_R01	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
 20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN1_R02	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
-20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-02_IFN1_R01	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
-20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-02_IFN1_R02	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
-20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-03_IFN1_R01	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
-20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-03_IFN1_R02	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
+20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN2_R01	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
+20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN2_R02	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
+20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN3_R01	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
+20180821_QE_HFX_LC2_SA_JMI_HLAIp_CRC-01_IFN3_R02	PEPTIDOME	comet_params/comet.params.peptidome.high_high	[A-Z]	fasta/human_irt_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/11/PXD014017/
 RV-Col_DEX_XIII_5-A	Arabidopsis	comet_params/comet.params.high_high	[KR]	fasta/arabidopsis_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/01/PXD020480/
 RV-Col_DEX_XIII_5-B	Arabidopsis	comet_params/comet.params.high_high	[KR]	fasta/arabidopsis_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/01/PXD020480/
 RV-Col_DEX_XIII_6-A	Arabidopsis	comet_params/comet.params.high_high	[KR]	fasta/arabidopsis_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/01/PXD020480/
