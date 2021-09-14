@@ -7,17 +7,17 @@ rule download_file:
         "raw/{sample}.raw",
     run:
         server = samp_to_ftp[wildcards.sample]
+	rawsample = sample_to_raw[wildcards.sample]
         shell("mkdir -p raw")
         shell(
             (
-                f"wget '{server}" + "/{wildcards.sample}.raw' -O "
+                f"wget '{server}" + "/{rawsample}.raw' -O "
                 "'{output}' -nc "
                 "--timeout=15 "
                 "--limit-rate=50m "
                 "--wait=5 "
             )
         )
-
 
 rule convert_file:
     input:
@@ -29,7 +29,9 @@ rule convert_file:
     run:
         # For some reaso, the dockerized version fails when running it directly
         # in this script, so you have to hack it this way ...
-        subprocess.run(["zsh", "msconvert.bash", f"{str(input).replace(" ", "\ ")}"], check=True, capture_output=True)
+        cmd =["zsh", "msconvert.bash", str(input).replace(' ', '\ ')] 
+        print(cmd)
+        subprocess.run(cmd, check=True, capture_output=True)
 
 
 rule mzml_scan_metadata:
