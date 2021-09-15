@@ -30,9 +30,11 @@ scan_metadata_files <- unlist(strsplit(params$scan_metadata, split="\\s+"), use.
 scan_metadata <- bind_rows(purrr::map(scan_metadata_files, readr::read_csv))
 
 df <- left_join(df, scan_metadata, by = c("RawFile" = "SpecId", "ScanNr" = "ScanNr"))
-
+df$RetentionTime[is.na(df$RetentionTime)] <- 0 
 head(df)
 ```
+
+
 ```{r}
 df <- df %>% 
     mutate(StripPeptide = gsub("\\[.{7}\\]", "", Peptide)) %>%
@@ -82,14 +84,16 @@ unique_modifications
 ```
 
 
-```{r}
+```{r fig.height=8, fig.width=10}
 for (mod in unique_modifications) {
     g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) + 
-      geom_point(shape = ".")
+      geom_point(shape = ".")  +
+    facet_wrap(~ RawFile)
     g <- g + ggtitle(mod)
     print(g)
     
-    g <- g + geom_smooth()
+    g <- g + geom_smooth(formula = y ~ splines::ns(x, 2), alpha=0.5)
+
     print(g)
 }
 mod
@@ -99,7 +103,8 @@ for (mod in unique_modifications) {
 
   g <- ggplot(tmp_df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) +
     geom_point(size=1, alpha=0.1) +
-    geom_smooth()
+    geom_smooth(formula = y ~ splines::ns(x, 2), alpha=0.5) +
+    facet_wrap(~ RawFile)
   g <- g + ggtitle(mod)
   print(g)
 }
@@ -107,17 +112,18 @@ for (mod in unique_modifications) {
 ```
 
 ```{r}
-my_lm <- mgcv::gam(RetentionTime ~ Prediction_irt, data=df %>% group_by(Peptide) %>% top_n(1, `mokapot score`))
 
-
-df$residual_irt <- predict(my_lm, newdata = df) - df$RetentionTime
+df <- df %>%
+  group_by(RawFile) %>% 
+  mutate(
+    ResidualRT = (RetentionTime - predict(lm(formula = RetentionTime ~ splines::ns(Prediction_irt, df=2)))))
 
 top_residuals <- df %>%
-    top_n(200, abs(residual_irt)) %>% 
+    top_n(200, abs(ResidualRT)) %>% 
     group_by(Peptide) %>% 
-    top_n(1, abs(residual_irt)) %>% 
+    top_n(1, abs(ResidualRT)) %>% 
     ungroup() %>% 
-    top_n(10, abs(residual_irt))
+    top_n(10, abs(ResidualRT))
 
 for (mod in unique_modifications) {
     g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) + geom_point(shape = ".")
@@ -129,23 +135,42 @@ for (mod in unique_modifications) {
         max.iter = 2000,
         force = 300,
         max.overlaps = 20)
+    
     g <- g + ggtitle(mod)
     print(g)
     
-    g <- ggplot(df, aes(x = residual_irt, fill = grepl(mod, Peptide))) +
+    g <- ggplot(
+      df, aes(x = ResidualRT, fill = grepl(mod, Peptide))) +
       geom_histogram(bins = 100) + 
       xlim(-20, 20)+ ggtitle(mod)
     
     print(g)
+    
+    g <- ggplot(
+      df, aes(y = ResidualRT, fill = grepl(mod, Peptide))) +
+      geom_boxplot() + ggtitle(mod)
+    
+    print(g)
+    
+     g <- ggplot(
+      df,  aes(
+        y = abs(ResidualRT),
+        x=grepl(mod, Peptide),
+        colour = grepl(mod, Peptide),
+        fill= grepl(mod, Peptide))) +
+      geom_violin(draw_quantiles = c(0.5), alpha=0.3) + ggtitle(mod) + coord_cartesian(ylim=c(0, 10))
+    
+    print(g)
+    
 }
 mod
 
 top_residuals <- df %>%
-    top_n(200, abs(residual_irt)) %>% 
+    top_n(200, abs(ResidualRT)) %>% 
     group_by(Peptide) %>% 
-    top_n(1, abs(residual_irt)) %>% 
+    top_n(1, abs(ResidualRT)) %>% 
     ungroup() %>% 
-    top_n(10, abs(residual_irt))
+    top_n(10, abs(ResidualRT))
 
 for (pep in top_residuals$Peptide) {
     weird_peptide <- filter(df, Peptide == pep)
@@ -199,7 +224,7 @@ for (mod in unique_modifications) {
         geom_vline(xintercept = median(1 -tmp_df2$Loss_loss_angle)) +
         geom_text(x = median(1 -tmp_df2$Loss_loss_angle), y = 50, label=median(1 -tmp_df2$Loss_loss_angle), inherit.aes = FALSE) +
         xlim(0,1) + coord_cartesian(expand=FALSE)
-    g <- g + ggtitle(mod)
+    g <- g + ggtitle(mod, median(1 -tmp_df2$Loss_loss_angle))
     print(g)
     
 }
