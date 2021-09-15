@@ -16,8 +16,16 @@ CHECKPOINT = config.get("checkpoint", None)
 
 print(CHECKPOINT)
 
-samples = pd.read_table(IN_TSV, comment="#").set_index("sample", drop=False)
+samples = pd.read_table(IN_TSV, comment="#")
+samples["raw_sample"] = [x for x in samples["sample"]]
+samples["sample"] = [x.replace(" ", "") for x in samples["sample"]]
+samples=samples.set_index("sample", drop=False)
 print(samples)
+
+sample_to_raw = {k:v for k,v in zip(samples["sample"], samples["raw_sample"])}
+
+def get_rawsample(sample):
+    return sample_to_raw[sample]
 
 
 def get_samples(experiment):

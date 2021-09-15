@@ -1,11 +1,11 @@
 #!/bin/bash
 
-for i in {1..1} ; do
+for i in {1..20} ; do
     /scratch/brown/jpaezpae/conda_envs/ef_data3/bin/poetry \
         run snakemake \
         --reason \
         --show-failed-logs \
-        --printshellcmds \
+        --printshellcmds --skip-script-cleanup --show-failed-logs --verbose \
         --local-cores 2 \
         -j 800 --cluster-config cluster.json \
         --cluster "sbatch -A {cluster.account} --mem={cluster.mem} -t {cluster.time} --cpus-per-task={cluster.cpus-per-task} -N {cluster.N}" \
@@ -16,6 +16,7 @@ for i in {1..1} ; do
         --rerun-incomplete eval_all ${@}
         # --keep-going \
         # --verbose \
+    sleep 60
 done
 
 #        --config tsv_file=target_files/TMT_mod_files.tsv \
