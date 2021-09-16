@@ -53,3 +53,12 @@ N2_d1_01 20170807_Q1_AWH_ColID_398_ProjID_724_Vilchez_5	CElegansGG	comet_params/
 N2_d5_01 20170807_Q1_AWH_ColID_398_ProjID_724_Vilchez_13	CElegansGG	comet_params/comet_gg.params.high_high	[A-Z]	fasta/Uniprot/UP000001940.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/05/PXD024338/
 N2_d10_01 20170807_Q1_AWH_ColID_398_ProjID_724_Vilchez_21	CElegansGG	comet_params/comet_gg.params.high_high	[A-Z]	fasta/Uniprot/UP000001940.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/05/PXD024338/
 N2_d15_01 20170807_Q1_AWH_ColID_398_ProjID_724_Vilchez_29	CElegansGG	comet_params/comet_gg.params.high_high	[A-Z]	fasta/Uniprot/UP000001940.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/05/PXD024338/
+WA163LPAcR2_B11	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_B12	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_B13	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_B21	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_B22	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_B23	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_WT1	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_WT2	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
+WA163LPAcR2_WT3	AcetylStrep	comet_params/Kmod_Acetyl.params.high_high	[KR]	fasta/Uniprot/UP000001973_contam.decoy.fasta	ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2021/07/PXD027205/
