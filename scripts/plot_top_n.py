@@ -99,7 +99,7 @@ if __name__ == "__main__":
     model = efm.PepTransformerModel.load_from_checkpoint(args.checkpoint)
     df = pd.read_csv(args.csv)
 
-    for scan_id, peptide, spec_id in zip(df["ScanNr"], df["Peptide"], df["SpecId"]):
+    for i, (scan_id, peptide, spec_id) in enumerate(zip(df["ScanNr"], df["Peptide"], df["SpecId"])):
         print(peptide)
         file = clean_file_name(spec_id)
         file = Path(args.search_path) / (file + ".mzML")
@@ -108,4 +108,4 @@ if __name__ == "__main__":
         peptide = peptide[peptide.index(".") + 1 :]
         peptide = peptide[: -peptide[::-1].index(".") - 1]
 
-        plot_scan_mirror(scan_id, peptide, str(file), None, prefix=args.prefix)
+        plot_scan_mirror(scan_id, peptide, str(file), None, prefix=str(args.prefix) + f"_{i+1}")
