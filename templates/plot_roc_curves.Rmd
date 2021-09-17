@@ -39,8 +39,8 @@ get_roc_curves <- function(x, added_name) {
 }
 
 df <- bind_rows(
-    get_roc_curves(params$psms_ef, "ElFragmentador"),
-    get_roc_curves(params$psms, "Vanilla")
+    get_roc_curves(params$psms_ef, "Mokapot + ElFragmentador"),
+    get_roc_curves(params$psms, "Mokapot")
 )
 
 ```
@@ -48,9 +48,34 @@ df <- bind_rows(
 ```{r}
 head(df)
 ```
+```{r}
+num_psm_1 <- df %>% 
+  group_by(Sample) %>%
+  top_n(1, -abs(0.01 - `mokapot PEP`))
+
+num_psm_1 %>% 
+  ungroup() %>%
+  mutate(
+    label=paste0(
+      `Accepted Target PSMS`,
+      ": +",
+      format(
+        (100 * `Accepted Target PSMS` / min(`Accepted Target PSMS`) - 100),
+        digits=2),
+      "%")) %>%
+  ggplot(
+    aes(x = Sample,
+        y = `Accepted Target PSMS`,
+        fill=Sample,
+        label=label)) +
+  geom_col() +
+  geom_text(nudge_y = 500) +
+  ggtitle("Number of accepted PSMs", "At 1% FDR")
+
+```
 
 
-```{r roc_curve, fig.height=3, fig.width=5}
+```{r roc_curve, fig.height=3, fig.width=7}
 df %>% arrange(`mokapot PEP`) %>%
     filter(`mokapot PEP` < 0.07) %>%
     ggplot(
@@ -65,7 +90,7 @@ df %>% arrange(`mokapot PEP`) %>%
 ```{r score_density, fig.height=3, fig.width=5}
 df <- bind_rows(
     get_scores(params$psms_ef, "ElFragmentador"),
-    get_scores(params$psms, "Vanilla")
+    get_scores(params$psms, "Mokapot + ElFragmentador")
 )
 
 ggplot(df, aes(x = `mokapot score`, fill=Sample)) +
