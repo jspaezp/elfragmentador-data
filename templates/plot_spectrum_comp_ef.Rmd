@@ -5,19 +5,22 @@ output:
     df_print: paged
 params:
   elfragmentador_pin: ~/git/elfragmentador-data/ef_comet_pin/20170430_HeLa_phosp_DDA_B_01_170506194651.elfragmentador.pin
-  decoy_psms_ef: ~/git/elfragmentador-data/mokapot/phospho.mokapot.decoy.psms.txt
-  decoy_psms: ~/git/elfragmentador-data/mokapot/phospho.mokapot.psms.txt
-  psms_ef: ~/git/elfragmentador-data/mokapot/phospho.mokapot.psms.txt
-  psms: ~/git/elfragmentador-data/mokapot/phospho.mokapot.decoy.psms.txt
-  model_importance: ~/git/elfragmentador-data/mokapot/phospho.mokapot.weights.csv
-  model_importance_ef: ~/git/elfragmentador-data/ef_mokapot/phospho.elfragmentador.mokapot.weights.csv
+  decoy_psms_ef: ~/git/elfragmentador-data/ef_mokapot/Phospho.elfragmentador.mokapot.decoy.psms.txt
+  decoy_psms: ~/git/elfragmentador-data/mokapot/Phospho.mokapot.decoy.psms.txt
+  psms_ef: ~/git/elfragmentador-data/ef_mokapot/Phospho.elfragmentador.mokapot.psms.txt
+  psms: ~/git/elfragmentador-data/mokapot/Phospho.mokapot.psms.txt
+  model_importance: ~/git/elfragmentador-data/mokapot/Phospho.mokapot.weights.csv
+  model_importance_ef: ~/git/elfragmentador-data/ef_mokapot/Phospho.elfragmentador.mokapot.weights.csv
   output_swapped_psms: swapped_psms.csv
   output_top_swapped_psms: swapped_psms.csv
+  output_best_corr_psms: best_corr_psms.csv
+
 ---
 
 ```{r, setup, include=FALSE}
 # set this option in the first code chunk in the document
 knitr::opts_chunk$set(echo = params$printcode)
+
 ```
 
 ```{r}
@@ -114,6 +117,12 @@ ggplot(
 pin_df %>% filter(Xcorr > 5)
 ```
 
+```{r}
+best_corr_peps <- pin_df %>% filter(Label == "Target", lnExpect < -10) %>% top_n(5, SpecAngle)
+best_corr_peps
+write_csv(best_corr_peps, params$output_best_corr_psms)
+```
+
 
 ```{r scores_vs_corr3}
 # ggplot(
@@ -124,16 +133,16 @@ pin_df %>% filter(Xcorr > 5)
 #     geom_density_2d_filled(bins=20) + 
 #     theme(legend.position = "None") +
 #     facet_wrap(~ Label) 
-
-
+# 
+# 
 # ggplot(
 #     pin_df, 
 #     aes(
 #         y = Sp,
 #         x = SpecAngle)) +
-#     geom_density_2d_filled(bins=200) + 
+#     geom_density_2d_filled(bins=200, contour_var = "ndensity") + 
 #     theme(legend.position = "None") +
-#     facet_wrap(~ Label) + scale_y_sqrt()
+#     facet_wrap(~ Label) + scale_y_sqrt() 
 ```
 
 
@@ -185,6 +194,7 @@ ggplot(
     scale_fill_viridis_c(trans = "log1p")
 ```
 
+
 ```{r}
 swapped_df_joint <- df_joint %>%
     filter(`mokapot PEP.None` < 0.01 | `mokapot PEP.EF` < 0.01) %>%
@@ -195,6 +205,8 @@ write_csv(swapped_df_joint, params$output_swapped_psms)
 swapped_df_joint %>% arrange(`mokapot PEP.EF`) %>% head(200)
 
 ```
+
+
 
 ```{r}
 top_changing <- filter(
@@ -215,6 +227,8 @@ print(top_changing)
 paste(top_changing$ScanNr, collapse = ", ")
 paste(top_changing$Peptide %>% gsub("^.\\.|\\..$", "", .), collapse = "', '")
 ```
+
+
 ```{r}
 top_5_xcorr <- top_n(pin_df, 5, Xcorr)
 print(top_5_xcorr)

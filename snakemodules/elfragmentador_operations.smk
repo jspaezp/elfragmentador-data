@@ -70,6 +70,7 @@ rule generate_report:
         html="ef_reports/{experiment}.report.html",
         output_swapped_psms="ef_reports/{experiment}.swapped.csv",
         output_top_swapped_psms="ef_reports/{experiment}.swapped.top.csv",
+        output_best_corr_psms="ef_reports/{experiment}.best_corr.csv",
     params:
         checkpoint=f"{CHECKPOINT}"
     run:
@@ -88,7 +89,8 @@ rule generate_report:
                 "             model_importance='{input.model_importance}',                ",
                 "             model_importance_ef='{input.model_importance_ef}',          ",
                 "             output_swapped_psms='{output.output_swapped_psms}',         ",
-                "             output_top_swapped_psms='{output.output_top_swapped_psms}'  ",
+                "             output_top_swapped_psms='{output.output_top_swapped_psms}', ",
+                "             output_best_corr_psms ='{output.output_best_corr_psms}'     ",
                 "         ),                                                              ",
                 "         output_file = '{output.html}',                                  ",
                 "         clean = FALSE,                                                  ",
@@ -105,9 +107,19 @@ rule generate_report:
             "--checkpoint {params.checkpoint} "
             "--csv {output.output_top_swapped_psms} "
             "--search_path . "
-            "--prefix ef_reports/{wildcards.experiment}"
+            "--prefix ef_reports/{wildcards.experiment}_SWAPPED"
         )
         shell(cmd)
+
+        cmd = (
+            "poetry run python ./scripts/plot_top_n.py "
+            "--checkpoint {params.checkpoint} "
+            "--csv {output.output_best_corr_psms} "
+            "--search_path . "
+            "--prefix ef_reports/{wildcards.experiment}_BEST"
+        )
+        shell(cmd)
+        
 
 
 rule generate_roc_curves:
