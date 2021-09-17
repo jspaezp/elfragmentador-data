@@ -118,7 +118,10 @@ pin_df %>% filter(Xcorr > 5)
 ```
 
 ```{r}
-best_corr_peps <- pin_df %>% filter(Label == "Target", lnExpect < -10) %>% top_n(5, SpecAngle)
+best_corr_peps <- pin_df %>%
+  filter(Label == "Target", lnExpect < -10) %>%
+  group_by(Peptide) %>% top_n(1, SpecAngle) %>% ungroup() %>%
+  top_n(5, SpecAngle)
 best_corr_peps
 write_csv(best_corr_peps, params$output_best_corr_psms)
 ```
@@ -219,7 +222,9 @@ top_changing <- filter(
       diff_mokapot_score = `mokapot score.EF` - `mokapot score.None`) %>%
   arrange(-diff_mokapot_score) %>%
   filter(Label == "Target") %>%
-  top_n(10, diff_mokapot_score)
+  group_by(Peptide) %>% top_n(1, diff_mokapot_score) %>% ungroup() %>%
+  top_n(10, diff_mokapot_score) %>%
+  ungroup()
 
 write_csv(top_changing, params$output_top_swapped_psms)
 print(top_changing)

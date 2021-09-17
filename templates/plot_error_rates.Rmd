@@ -186,7 +186,7 @@ for (pep in top_residuals$Peptide) {
 ```
 
 ```{r fig.height=4, fig.width=3}
-ggplot(df, aes(x = residual_irt)) +
+ggplot(df, aes(x = ResidualRT)) +
   geom_histogram(bins = 100) + 
   xlim(-20, 20)
 ```
