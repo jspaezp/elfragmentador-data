@@ -378,6 +378,7 @@ importances <- bind_rows(
       mutate(Rescoring = "Standard") ,
   readr::read_csv(params$model_importance_ef) %>% 
       mutate(Rescoring = "ElFragmentador")) %>%
+  filter(Feature != "intercept") %>%
   complete(Feature, Fold, Rescoring, fill=list(Weight = 0)) %>%
   group_by(Feature) %>%
   nest() %>%
