@@ -120,6 +120,7 @@ pin_df %>% filter(Xcorr > 5)
 ```{r}
 best_corr_peps <- pin_df %>%
   filter(Label == "Target", lnExpect < -10) %>%
+  group_by(ScanNr, ExpMass) %>% top_n(1, SpecAngle) %>% ungroup() %>%
   group_by(Peptide) %>% top_n(1, SpecAngle) %>% ungroup() %>%
   group_by(Modified = grepl("\\[", Peptide)) %>%
   top_n(10, SpecAngle)
@@ -223,6 +224,7 @@ top_changing <- filter(
       diff_mokapot_score = `mokapot score.EF` - `mokapot score.None`) %>%
   arrange(-diff_mokapot_score) %>%
   filter(Label == "Target") %>%
+  group_by(ScanNr, ExpMass) %>% top_n(1, SpecAngle) %>% ungroup() %>%
   group_by(Peptide) %>% top_n(1, diff_mokapot_score) %>% ungroup() %>%
   group_by(Modified = grepl("\\[", Peptide)) %>%
   top_n(10, diff_mokapot_score) %>%
