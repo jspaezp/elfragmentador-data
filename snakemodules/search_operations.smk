@@ -3,9 +3,7 @@ import matplotlib as mpl
 mpl.use("Agg")
 import matplotlib.pyplot as plt
 
-
-include: "./env_setup.smk"
-
+from env_setup import TPP_DOCKER, curr_dir
 
 rule comet_phospho_params:
     input:
@@ -113,14 +111,6 @@ rule nocleav_comet_TMT_params:
             sed -e "s/^10. Nothing.*/10. Nothing 1 Z -/g" \
             | tee {output}
         """
-
-
-def get_fasta(wildcards):
-    return samp_to_fasta[wildcards.sample]
-
-
-def get_comet_params(wildcards):
-    return samp_to_params[wildcards.sample]
 
 
 rule comet_search:

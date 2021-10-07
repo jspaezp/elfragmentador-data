@@ -74,7 +74,7 @@ ggplot(pin_df, aes(x = SpecAngle, fill = factor(Label))) +
   facet_wrap(~Label, ncol = 1) + scale_y_sqrt()
 
 
-ggplot(pin_df, aes(x = NormRTSqError, fill = factor(Label))) +
+ggplot(pin_df, aes(x = DiffNormRT, fill = factor(Label))) +
   geom_histogram(alpha = 0.7, shape = ".") +
   facet_wrap(~Label, ncol = 1) + scale_y_sqrt() +
   scale_y_sqrt()
@@ -310,7 +310,7 @@ ggplot(
     pin_df,
     aes(
         y = Xcorr,
-        x = NormRTSqError)) +
+        x = DiffNormRT)) +
     geom_hex(bins=100) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +
@@ -338,7 +338,7 @@ ggplot(
     pin_df,
     aes(
         y = lnExpect,
-        x = NormRTSqError)) +
+        x = DiffNormRT)) +
     geom_hex(bins=100) + 
     facet_wrap(~ Label) +
     scale_fill_viridis_c(trans="sqrt", alpha = 0.4) +

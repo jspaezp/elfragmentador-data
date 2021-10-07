@@ -1,3 +1,4 @@
+
 from collections import defaultdict
 import pandas as pd
 import numpy as np
@@ -59,6 +60,39 @@ for samp, fas, params, ftp in zip(
     samp_to_params[samp] = params
     samp_to_ftp[samp] = ftp
 
+def get_exp_spec_metadata(wildcards):
+    samples = exp_to_sample[wildcards.experiment]
+    out = ["raw_scan_metadata/" + sample + ".csv" for sample in samples]
+    return out
+
+# Mokapot related
+
+def get_mokapot_ins(base_dir="comet/", extension=".pin"):
+    base_str = base_dir + "{sample}" + extension
+
+    def _get_mokapot_ins(wildcards):
+        outs = expand(base_str, sample=get_samples(wildcards.experiment))
+        return outs
+
+    return _get_mokapot_ins
+
+def get_enzyme_regex(wildcards):
+    out = exp_to_enzyme[wildcards.experiment]
+    assert len(out) == 1
+    return out[0]
+
+# Search ops related
+
+def get_fasta(wildcards):
+    return samp_to_fasta[wildcards.sample]
+
+
+def get_comet_params(wildcards):
+    return samp_to_params[wildcards.sample]
+
+
+
+UNIQ_EXP = np.unique(samples["experiment"])
 
 localrules:
     # get list with $ grep -P "^rule" workflow.smk | sed -e "s/rule //g" | sed -e "s/:/,/g" 
@@ -85,22 +119,61 @@ localrules:
     comet_semitriptic_params,
     clip_comet_pin,
     mokapot_spectrast_in,
-    prosit_input,
     aggregate_mokapot_sptxts,
 
 
-UNIQ_EXP = np.unique(samples["experiment"])
 
+module fasta_preparations:
+    snakefile:
+        "./snakemodules/fasta_preparations.smk"
 
-include: "./snakemodules/fasta_preparations.smk"
-include: "./snakemodules/raw_file_operations.smk"
+use rule * from fasta_preparations
+
+module raw_file_operations:
+    snakefile:
+        "./snakemodules/raw_file_operations.smk"
+
+use rule * from raw_file_operations
+
+# module search_operations:
+#     snakefile:
+#         "./snakemodules/search_operations.smk"
+# 
+# use rule * from search_operations
+
 include: "./snakemodules/search_operations.smk"
-include: "./snakemodules/spectrast_operations.smk"
+
+module spectrast_operations:
+    snakefile:
+        "./snakemodules/spectrast_operations.smk"
+
+# module mokapot_operations:
+#     snakefile:
+#         "./snakemodules/mokapot_operations.smk"
+# 
+# use rule * from mokapot_operations
+
 include: "./snakemodules/mokapot_operations.smk"
-include: "./snakemodules/irt_operations.smk"
-include: "./snakemodules/train_data_operations.smk"
+
+module irt_operations:
+    snakefile:
+        "./snakemodules/irt_operations.smk"
+
+module train_data_operations:
+    snakefile:
+        "./snakemodules/train_data_operations.smk"
+
+# module elfragmentador_operations:
+#     snakefile:
+#         "./snakemodules/elfragmentador_operations.smk"
+# use rule * from elfragmentador_operations
+
 include: "./snakemodules/elfragmentador_operations.smk"
-include: "./snakemodules/ptm_operations.smk"
+
+
+module ptm_operations:
+    snakefile:
+        "./snakemodules/ptm_operations.smk"
 
 
 common_inputs = [
@@ -120,10 +193,10 @@ common_inputs = [
     [f"comet/{sample}.pin" for sample in samples["sample"]],
     [f"comet/{sample}.xcorr.png" for sample in samples["sample"]],
     [f"comet/{sample}.lnexpect.png" for sample in samples["sample"]],
-    [f"rt_csv/{experiment}.irt.csv" for experiment in np.unique(samples["experiment"])],
+    [f"rt_csv/{experiment}.irt.csv" for experiment in UNIQ_EXP],
     [
         f"mokapot/{experiment}.mokapot.weights.csv"
-        for experiment in np.unique(samples["experiment"])
+        for experiment in UNIQ_EXP
     ],
 ]
 
@@ -158,23 +231,23 @@ eval_inputs = [
     ],
     [
         f"ef_mokapot/{experiment}.elfragmentador.mokapot.weights.csv"
-        for experiment in np.unique(samples["experiment"])
+        for experiment in UNIQ_EXP
     ],
     [
         f"ef_reports/{experiment}.report.html"
-        for experiment in np.unique(samples["experiment"])
+        for experiment in UNIQ_EXP
     ],
     [
         f"ef_reports/{experiment}.roc_curves.html"
-        for experiment in np.unique(samples["experiment"])
+        for experiment in UNIQ_EXP
     ],
     [
         f"ef_reports/{experiment}.plot_error_rates.html"
-        for experiment in np.unique(samples["experiment"])
+        for experiment in UNIQ_EXP
     ],
     [
         f"ef_reports/{experiment}.swapped.top.csv"
-        for experiment in np.unique(samples["experiment"])
+        for experiment in UNIQ_EXP
     ],
 ]
 
@@ -199,24 +272,3 @@ rule get_data:
         [f"raw/{sample}.raw" for sample in samples["sample"]],
         [f"raw/{sample}.mzML" for sample in samples["sample"]],
 
-
-rule prosit_input:
-    input:
-        "spectrast/{experiment}.iproph.pp.sptxt",
-    output:
-        "prosit_in/{experiment}.iproph.pp.sptxt",
-    shell:
-        """
-        set -x
-        set -e
-
-        mkdir -p prosit_in
-
-        echo 'modified_sequence,collision_energy,precursor_charge' > {output}
-        CE=$(grep -oP "CollisionEne.*? " {input} | uniq |  sed -e "s/CollisionEnergy=//g" | sed -e "s/\..*//g")
-        grep -P "^Name" {input} | \
-            sed -e "s/Name: //g" | \
-            sed -e "s+/+,${{CE}},+g" >> {output}
-
-        head {output}
-        """

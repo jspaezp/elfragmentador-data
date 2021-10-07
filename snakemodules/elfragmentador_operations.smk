@@ -1,9 +1,4 @@
 
-include: "./mokapot_operations.smk"
-include: "./search_operations.smk"
-include: "./raw_file_operations.smk"
-
-
 import pathlib
 
 rule elfragmentador_pin:
@@ -162,8 +157,8 @@ rule evaluation_on_psms:
     run:
         cmd = [
             "mkdir -p ef_evaluation ; ",
-            " elfragmentador_evaluate --input {input.mokapot_psms} ",
-            " --screen_nce='-10,-8,-6,-4,-2,0,2,4,6,8,10' --batch_size 50 --max_spec 100000 ",
+            " poetry run elfragmentador_evaluate --input {input.mokapot_psms} ",
+            " --screen_nce='-10,-8,-6,-4,-2,0,2,4,6,8,10' ",
             " --out_csv {output.out_csv} ",
             " --model_checkpoint {params.checkpoint} ",
             " --threads {threads} | tee {output.log}",

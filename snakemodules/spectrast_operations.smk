@@ -12,9 +12,7 @@ from mokapot_utils import (
     split_mokapot_spectrast_in,
 )
 
-
-include: "./env_setup.smk"
-include: "./raw_file_operations.smk"
+from env_setup import TPP_DOCKER, curr_dir
 
 
 rule mokapot_spectrast_in:
