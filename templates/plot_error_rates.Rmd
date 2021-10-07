@@ -24,7 +24,8 @@ theme_set(theme_bw())
 ```
 
 ```{r}
-df <- readr::read_csv(params$psms) %>% mutate(RawFile = gsub("^(.*)_[0-9]+_[0-9]+_[0-9]+", "\\1", SpecId))
+df <- readr::read_csv(params$psms) %>%
+  mutate(RawFile = gsub("^(.*)_[0-9]+_[0-9]+_[0-9]+", "\\1", SpecId))
 
 scan_metadata_files <- unlist(strsplit(params$scan_metadata, split="\\s+"), use.names = FALSE)
 scan_metadata <- bind_rows(purrr::map(scan_metadata_files, readr::read_csv))
@@ -37,22 +38,35 @@ head(df)
 
 ```{r}
 df <- df %>% 
-    mutate(StripPeptide = gsub("\\[.{7}\\]", "", Peptide)) %>%
-    mutate_at(vars(matches("loss|irt")), function(x) {as.numeric(gsub("\\[|\\]", "", x))})
+    mutate(
+      StripPeptide = gsub("\\[.{7}\\]", "", Peptide) %>%
+          gsub("(^.*?\\.)|(\\..*$)", "", ., perl = TRUE)) %>%
+    mutate_at(
+      vars(matches("loss|irt")),
+      function(x) {as.numeric(gsub("\\[|\\]", "", x))})
 
-df$PepLength <- nchar(df$StripPeptide) - 4
+df$PepLength <- nchar(df$StripPeptide)
 
 head(df)
 ```
 
 ```{r}
+f1 <- gzfile("assets/elfragmentador_data.txt.gz") 
+f2 <- gzfile("assets/prosit_data.txt.gz")
+exclusion_list <- c(readLines(f1), readLines(f2))
+close(f1)
+close(f2)
+  
+
 prosit_input_df <- df %>% 
   mutate(
     charge = as.numeric(gsub("^.*_[0-9]+_([0-9]+)_[0-9]+", "\\1", SpecId)),
-    sequence = gsub("M\\[15.9949\\]", "M(ox)", gsub("(^[A-Z-]{0,3}\\.)|(\\.[A-Z-]{0,3}$)", "",Peptide))) %>% 
-  filter(!grepl("\\[", sequence)) %>%
+    sequence = gsub("(^[A-Z-]{0,3}\\.)|(\\.[A-Z-]{0,3}$)", "", Peptide) %>%
+      gsub("M\\[15.9949\\]", "M(ox)", .)) %>% 
+  filter(!grepl("\\[", sequence), ! sequence %in% exclusion_list) %>%
   filter(PepLength < 30)
 
+rm(exclusion_list)
 
 prosit_in <- prosit_input_df %>% select(
   modified_sequence = sequence,
@@ -66,7 +80,6 @@ readr::write_csv(file = params$out_prosit_in, x = prosit_in)
 readr::write_csv(file = params$out_psms_prosit_filtered, x = prosit_input_df)
 
 system(paste("head -10 ", params$out_prosit_in))
-
 system(paste("head -2 ", params$out_psms_prosit_filtered))
 
 ```
