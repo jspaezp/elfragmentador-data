@@ -15,7 +15,7 @@ pyteomics = "^4.4.2"
 matplotlib = "^3.4.1"
 lxml = "^4.6.3"
 ipykernel = "^6.2.0"
-elfragmentador = "^0.50.6"
+elfragmentador = { git = "https://github.com/jspaezp/elfragmentador.git", branch = "main" }
 tqdm = "^4.62.3"
 poetry = "^1.1.11"
 

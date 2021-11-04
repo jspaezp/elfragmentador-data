@@ -215,7 +215,7 @@ rule plot_error_rates_top1:
             "         'templates/plot_error_rates_top1.Rmd',         ",
             "         params = list(                           ",
             "             psms='{input.evaluation_psms_ef}',           ",
-            "             scan_metadata='{input.scan_metadata}',           ",
+            "             scan_metadata='{input.scan_metadata}'        ",
             "         ),                                       ",
             "         output_file = '{output.html}',           ",
             "         clean = FALSE,                           ",
