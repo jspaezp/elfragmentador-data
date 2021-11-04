@@ -16,7 +16,6 @@ knitr::opts_chunk$set(echo = params$printcode)
 ```
 
 ```{r}
-
 print(params)
 library(tidyverse)
 library(hexbin)
@@ -69,7 +68,7 @@ prosit_input_df <- df %>%
 
 rm(exclusion_list)
 
-prosit_in <- prosit_input_df %>% select(
+prosit_in <- prosit_input_df %>% dplyr::select(
   modified_sequence = sequence,
   collision_energy = CollisionEnergy,
   precursor_charge=charge) %>%
@@ -132,20 +131,86 @@ for (mod in unique_modifications) {
     geom_point(size=1, alpha=0.1) +
     geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE) +
     facet_wrap(~ RawFile)
-  g <- g + ggtitle(mod)
+  g <- g + ggtitle(mod, "Top 1")
   print(g)
 }
 
 ```
 
 ```{r}
-
 df <- df %>%
   group_by(RawFile) %>% 
-  mutate(
-    ResidualRT = (RetentionTime - predict(lm(formula = RetentionTime ~ splines::ns(
-      Prediction_irt, df=4, intercept = TRUE)))))
+  nest()
 
+make_line_data <- function(df) {
+  xs <- seq(from = min(df$Prediction_irt), to = max(df$Prediction_irt), length.out = 100)
+  
+  sub_df <- df %>% 
+    group_by(Peptide) %>% 
+    top_n(1, `mokapot score`)
+  
+  model <- lm(
+    formula = RetentionTime ~ splines::ns(Prediction_irt, df=4, intercept = TRUE),
+    data = sub_df)
+  
+  preds <- predict(model, newdata = tibble(Prediction_irt = xs))
+  out <- tibble(Prediction_irt = xs, RetentionTime = preds)
+  return(out)
+}
+
+geom_df_rt_line <- function(df) {
+  geom_line(
+    data = make_line_data(df),
+    mapping = aes(
+      x = RetentionTime,
+      y = Prediction_irt))
+}
+
+grouped_geom_df_rt_line <- function(df, grouping) {
+  tmp_df <- df %>%
+    group_by(Peptide, RawFile) %>% 
+    top_n(1, `mokapot score`) %>%
+    ungroup() %>%
+    dplyr::select(Peptide, RawFile, RetentionTime, Prediction_irt, `mokapot score`, {{ grouping }}) %>%
+    group_by({{ grouping }}) %>% 
+    nest()
+    
+  tmp_df$data <- purrr::map(tmp_df$data, make_line_data)
+  tmp_df <- unnest(tmp_df, cols = c(data))
+  
+  
+  out <- geom_line(
+    data = tmp_df,
+    mapping = aes(
+      x = RetentionTime,
+      y = Prediction_irt,
+      group = {{ grouping }}))
+  
+  return(out)
+}
+
+
+make_prediction <- function(df) {
+  sub_df <- df %>% 
+    group_by(Peptide) %>% 
+    top_n(1, `mokapot score`)
+  
+  model <- lm(
+    formula = RetentionTime ~ splines::ns(Prediction_irt, df=4, intercept = TRUE),
+    data = sub_df)
+  
+  preds <- predict(model, newdata = df)
+  ResidualRT <- df$RetentionTime - preds
+  df$ResidualRT <- ResidualRT
+  return(df)
+}
+
+df$data <- lapply(df$data, make_prediction)
+df <- unnest(df, cols = c(data))
+```
+
+
+```{r}
 top_residuals <- df %>%
     top_n(200, abs(ResidualRT)) %>% 
     group_by(Peptide) %>% 
@@ -153,6 +218,11 @@ top_residuals <- df %>%
     ungroup() %>% 
     top_n(10, abs(ResidualRT))
 
+top_residuals
+```
+
+
+```{r}
 for (mod in unique_modifications) {
     g <- ggplot(
       df, 
@@ -219,10 +289,9 @@ for (pep in top_residuals$Peptide) {
         geom_point(shape = ".") + 
         geom_point(data = weird_peptide)
     g <- g + ggtitle(pep, unique(weird_peptide$Proteins))
-    g <- g + geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE)
+    g <- g + grouped_geom_df_rt_line(df, RawFile)
     print(g)
 }
-
 
 ```
 
@@ -232,7 +301,7 @@ tmp_df <- df %>%
   filter(n() > 1) %>%
   mutate(RTError = RetentionTime - mean(RetentionTime)) %>%
   ungroup() %>%
-  select(Sample = RTError, Prediction = ResidualRT)
+  dplyr::select(Sample = RTError, Prediction = ResidualRT)
 
 label_data <- lapply(tmp_df, function(x) {median(abs(x))})
 title_string <- paste(
