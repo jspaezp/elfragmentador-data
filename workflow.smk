@@ -246,6 +246,10 @@ eval_inputs = [
         for experiment in UNIQ_EXP
     ],
     [
+        f"ef_reports/{experiment}.plot_error_rates_top1.html"
+        for experiment in UNIQ_EXP
+    ],
+    [
         f"ef_reports/{experiment}.swapped.top.csv"
         for experiment in UNIQ_EXP
     ],

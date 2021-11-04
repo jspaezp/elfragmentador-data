@@ -200,3 +200,31 @@ rule plot_error_rates:
         shell(cmd)
 
 
+rule plot_error_rates:
+    input:
+        evaluation_psms_ef="ef_evaluation/{experiment}.csv.csv",
+        scan_metadata=get_exp_spec_metadata,
+    output:
+        html="ef_reports/{experiment}.plot_error_rates_top1.html",
+    run:
+        cmd = [
+            " set -x ;                                         ",
+            " set -e ;                                         ",
+            " mkdir -p ef_reports ;                            ",
+            " R -e  \"rmarkdown::render(                       ",
+            "         'templates/plot_error_rates_top1.Rmd',         ",
+            "         params = list(                           ",
+            "             psms='{input.evaluation_psms_ef}',           ",
+            "             scan_metadata='{input.scan_metadata}',           ",
+            "             out_prosit_in='{output.prosit_in}',           ",
+            "             out_psms_prosit_filtered='{output.prosit_filtered_psms}'                  ",
+            "         ),                                       ",
+            "         output_file = '{output.html}',           ",
+            "         clean = FALSE,                           ",
+            "         knit_root_dir = getwd(), intermediates_dir=tempdir(),                 ",
+            "         output_dir = 'ef_reports')\"             ",
+        ]
+        cmd = "".join([" " + x.strip() + " " for x in cmd])
+        print(cmd)
+        shell(cmd)
+

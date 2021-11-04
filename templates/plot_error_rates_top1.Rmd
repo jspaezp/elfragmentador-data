@@ -1,0 +1,373 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+params:
+  psms: ~/git/elfragmentador-data/ef_evaluation/Arabidopsis.csv.csv
+  scan_metadata: ~/git/elfragmentador-data/raw_scan_metadata/RV-Col_DEX_XIII_5-A.csv
+  out_prosit_in: ~/git/elfragmentador-data/ef_evaluation_prosit/Input_Arabidopsis.csv
+  out_psms_prosit_filtered: ~/git/elfragmentador-data/ef_evaluation_prosit/Comparisson_Arabidopsis.csv
+---
+
+```{r, setup, include=FALSE}
+# set this option in the first code chunk in the document
+knitr::opts_chunk$set(echo = params$printcode)
+```
+
+```{r}
+print(params)
+library(tidyverse)
+library(hexbin)
+theme_set(theme_bw())
+```
+
+```{r}
+df <- readr::read_csv(params$psms) %>%
+  mutate(RawFile = gsub("^(.*)_[0-9]+_[0-9]+_[0-9]+", "\\1", SpecId))
+
+scan_metadata_files <- unlist(strsplit(params$scan_metadata, split="\\s+"), use.names = FALSE)
+scan_metadata <- bind_rows(purrr::map(scan_metadata_files, readr::read_csv))
+
+df <- left_join(df, scan_metadata, by = c("RawFile" = "SpecId", "ScanNr" = "ScanNr")) %>%
+  group_by(GroundTruth_charge, Peptide) %>% 
+  top_n(1, `mokapot score`)
+
+df$RetentionTime[is.na(df$RetentionTime)] <- 0 
+head(df)
+```
+
+
+```{r}
+df <- df %>% 
+    mutate(
+      StripPeptide = gsub("\\[.{7,8}\\]", "", Peptide) %>%
+          gsub("(^.*?\\.)|(\\..*$)", "", ., perl = TRUE)) %>%
+    mutate_at(
+      vars(matches("loss|irt")),
+      function(x) {as.numeric(gsub("\\[|\\]", "", x))})
+
+df$PepLength <- nchar(df$StripPeptide)
+
+head(df)
+```
+
+
+
+```{r}
+unique_modifications <- grep("\\[.*\\]", df$Peptide, value = TRUE, perl = TRUE) %>%
+    gsub(".*(\\[.*?\\]).*", "\\1", .) %>% 
+    unique() %>% 
+    gsub("\\[", "\\\\\\[", .) %>%
+    gsub("\\]", "\\\\\\]", .)
+
+unique_modifications
+```
+
+
+```{r fig.height=8, fig.width=10}
+for (mod in unique_modifications) {
+    g <- ggplot(
+      df,
+      aes(
+        x = RetentionTime,
+        y = Prediction_irt,
+        colour = grepl(mod, Peptide))) + 
+      geom_point(shape = ".")  +
+    facet_wrap(~ RawFile)
+    g <- g + ggtitle(mod)
+    print(g)
+    
+    g <- g + geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE)
+
+    print(g)
+}
+mod
+
+for (mod in unique_modifications) {
+  tmp_df <- df %>% 
+    group_by(Peptide) %>% 
+    top_n(1, `mokapot score`)
+
+  g <- ggplot(
+    tmp_df,
+    aes(
+      x = RetentionTime,
+      y = Prediction_irt,
+      colour = grepl(mod, Peptide))) +
+    geom_point(size=1, alpha=0.1) +
+    geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE) +
+    facet_wrap(~ RawFile)
+  g <- g + ggtitle(mod, "Top 1")
+  print(g)
+}
+
+```
+
+```{r}
+df <- df %>%
+  group_by(RawFile) %>% 
+  nest()
+
+make_line_data <- function(df) {
+  xs <- seq(from = min(df$Prediction_irt), to = max(df$Prediction_irt), length.out = 200)
+  
+  sub_df <- df %>% 
+    group_by(Peptide) %>% 
+    top_n(1, `mokapot score`)
+  
+  model <- lm(
+    formula = RetentionTime ~ splines::ns(Prediction_irt, df=4, intercept = TRUE),
+    data = sub_df)
+  
+  preds <- predict(model, newdata = tibble(Prediction_irt = xs))
+  out <- tibble(Prediction_irt = xs, RetentionTime = preds)
+  return(out)
+}
+
+geom_df_rt_line <- function(df) {
+  geom_line(
+    data = make_line_data(df),
+    mapping = aes(
+      x = RetentionTime,
+      y = Prediction_irt))
+}
+
+grouped_geom_df_rt_line <- function(df, grouping) {
+  tmp_df <- df %>%
+    group_by(Peptide, RawFile) %>% 
+    top_n(1, `mokapot score`) %>%
+    ungroup() %>%
+    dplyr::select(Peptide, RawFile, RetentionTime, Prediction_irt, `mokapot score`, {{ grouping }}) %>%
+    group_by({{ grouping }}) %>% 
+    nest()
+    
+  tmp_df$data <- purrr::map(tmp_df$data, make_line_data)
+  tmp_df <- unnest(tmp_df, cols = c(data))
+  
+  
+  out <- geom_line(
+    data = tmp_df,
+    mapping = aes(
+      x = RetentionTime,
+      y = Prediction_irt,
+      group = {{ grouping }}))
+  
+  return(out)
+}
+
+
+make_prediction <- function(df) {
+  sub_df <- df %>% 
+    group_by(Peptide) %>% 
+    top_n(1, `mokapot score`)
+  
+  model <- lm(
+    formula = RetentionTime ~ splines::ns(Prediction_irt, df=4, intercept = TRUE),
+    data = sub_df)
+  
+  preds <- predict(model, newdata = df)
+  ResidualRT <- df$RetentionTime - preds
+  df$ResidualRT <- ResidualRT
+  return(df)
+}
+
+df$data <- lapply(df$data, make_prediction)
+df <- unnest(df, cols = c(data))
+```
+
+
+```{r}
+top_residuals <- df %>%
+    top_n(200, abs(ResidualRT)) %>% 
+    group_by(Peptide) %>% 
+    top_n(1, abs(ResidualRT)) %>% 
+    ungroup() %>% 
+    top_n(10, abs(ResidualRT))
+
+top_residuals
+```
+
+
+```{r}
+for (mod in unique_modifications) {
+    g <- ggplot(
+      df, 
+      aes(
+        x = RetentionTime,
+        y = Prediction_irt,
+        colour = grepl(mod, Peptide))) +
+      geom_point(shape = ".")
+    
+    g <- g + ggtitle(mod)
+    print(g)
+    
+    g <- g + ggrepel::geom_text_repel(
+        data = top_residuals, 
+        colour = "black",
+        aes(label = Peptide),
+        min.segment.length = 0,
+        max.iter = 2000,
+        force = 300,
+        max.overlaps = 20)
+    
+    print(g)
+    
+    g <- ggplot(
+      df, aes(x = ResidualRT, fill = grepl(mod, Peptide))) +
+      geom_histogram(binwidth = 0.5, position = "identity", alpha = 0.5) + 
+      xlim(-20, 20) +
+      ggtitle(mod)
+    
+    print(g)
+    
+    g <- ggplot(
+      df, aes(y = ResidualRT, fill = grepl(mod, Peptide))) +
+      geom_boxplot() +
+      ggtitle(mod)
+    
+    print(g)
+    
+     g <- ggplot(
+       df,  aes(
+         y = abs(ResidualRT),
+         x=grepl(mod, Peptide),
+         colour = grepl(mod, Peptide),
+         fill= grepl(mod, Peptide))) +
+       geom_violin(draw_quantiles = c(0.5), alpha=0.3) + 
+       ggtitle(mod) + coord_cartesian(ylim=c(0, 10))
+    
+    print(g)
+    
+}
+mod
+
+top_residuals <- df %>%
+    top_n(200, abs(ResidualRT)) %>% 
+    group_by(Peptide) %>% 
+    top_n(1, abs(ResidualRT)) %>% 
+    ungroup() %>% 
+    top_n(10, abs(ResidualRT))
+
+for (pep in top_residuals$Peptide) {
+    weird_peptide <- filter(df, Peptide == pep)
+    
+    g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt)) + 
+        geom_point(shape = ".") + 
+        geom_point(data = weird_peptide)
+    g <- g + ggtitle(pep, unique(weird_peptide$Proteins))
+    g <- g + grouped_geom_df_rt_line(df, RawFile)
+    print(g)
+}
+
+```
+
+```{r fig.height=3.5, fig.width=5}
+tmp_df <- df %>% 
+  group_by(Peptide) %>% 
+  filter(n() > 1) %>%
+  mutate(RTError = RetentionTime - mean(RetentionTime)) %>%
+  ungroup() %>%
+  dplyr::select(Sample = RTError, Prediction = ResidualRT)
+
+label_data <- lapply(tmp_df, function(x) {median(abs(x))})
+title_string <- paste(
+  paste0("MedianAbsError ", names(label_data)),
+  format(unlist(label_data), digits = 3),
+  sep = ": ", collapse = "\n")
+
+tmp_df %>%
+  reshape2::melt() %>%
+  ggplot(data = ., aes(x = value, fill = variable, colour = variable)) +
+  geom_histogram(binwidth = 1, alpha = 0.3, position = "identity") +
+  coord_cartesian(xlim = c(-10, 10)) +
+  ggtitle(title_string, "Peptides with >1 PSM")
+```
+
+
+```{r fig.height=4, fig.width=3}
+title_string <- format(median(abs(df$ResidualRT)), digits = 3)
+
+ggplot(df, aes(x = ResidualRT)) +
+  geom_histogram(binwidth = 1, position = "identity", alpha = 0.5) + 
+  xlim(-20, 20) + 
+  ggtitle("MedianAbsoluteError\nPredictedRT", title_string)
+```
+
+
+```{r fig.height=4, fig.width=16}
+ tmp_df <- df %>%
+        filter(PepLength < 35) %>%
+        mutate(PepLength = factor(PepLength)) %>%
+        group_by(PepLength) %>%
+        mutate(n = n()) %>%
+        filter(n > 20) %>%
+        ungroup()
+    
+for (mod in unique_modifications) {
+    tmp_df2 <- mutate(tmp_df, ModifiedPeptide = grepl(mod, Peptide))
+    count_df <- tmp_df2 %>% 
+        group_by(PepLength, ModifiedPeptide) %>%
+        summarise(n = n()) %>%
+        ungroup()
+        
+    
+    g <- tmp_df2 %>%
+        ggplot(aes(x = PepLength, y = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
+        geom_boxplot(alpha=0.8, outlier.size = 0.5, outlier.alpha = 0.5) +
+        geom_text(
+            alpha = 1, data = count_df, y = 0.05,
+            aes(label = n, colour = ModifiedPeptide),
+            position = position_dodge2(width=0.9, padding = 0.02))
+    
+    g <- g + ggtitle(mod) + ylim(0,1)
+    print(g)
+    
+    g <- tmp_df2 %>%
+        ggplot(aes(x = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
+        geom_histogram(alpha=0.8, binwidth = 0.01, position = "identity") +
+        geom_vline(xintercept = median(1 -tmp_df2$Loss_loss_angle)) +
+        geom_text(
+          x = median(1 -tmp_df2$Loss_loss_angle),
+          y = 100,
+          label=median(1 -tmp_df2$Loss_loss_angle),
+          inherit.aes = FALSE) +
+        xlim(0,1) +
+        coord_cartesian(expand=FALSE)
+    g <- g + ggtitle(mod, median(1 -tmp_df2$Loss_loss_angle))
+    print(g)
+    
+}
+
+
+for (mod in unique_modifications) {
+    tmp_df3 <- mutate(tmp_df, ModifiedPeptide = grepl(mod, Peptide)) %>%
+      group_by(Peptide) %>%
+      top_n(1, `mokapot score`)
+    
+    count_df <- tmp_df2 %>%
+      group_by(Peptide) %>%
+      top_n(1, `mokapot score`) %>% 
+      group_by(PepLength, ModifiedPeptide) %>%
+      summarise(n = n()) %>%
+      ungroup()
+        
+    
+    g <- tmp_df3 %>%
+        ggplot(aes(x = PepLength, y = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
+        geom_boxplot(alpha=0.8, outlier.size = 0.5, outlier.alpha = 0.5) +
+        geom_text(
+            alpha = 1, data = count_df, y = 0.05,
+            aes(label = n, colour = ModifiedPeptide), position = position_dodge2(width=0.9, padding = 0.02))
+    g <- g + ggtitle(mod) + ylim(0,1)
+    print(g)
+}
+mod
+
+
+```
+
+
+```{r}
+```
+
