@@ -234,9 +234,9 @@ tmp_df <- df %>%
   ungroup() %>%
   select(Sample = RTError, Prediction = ResidualRT)
 
-label_data <- lapply(tmp_df, function(x) {mean(abs(x))})
+label_data <- lapply(tmp_df, function(x) {median(abs(x))})
 title_string <- paste(
-  paste0("MeanAbsError ", names(label_data)),
+  paste0("MedianAbsError ", names(label_data)),
   format(unlist(label_data), digits = 3),
   sep = ": ", collapse = "\n")
 
@@ -245,7 +245,7 @@ tmp_df %>%
   ggplot(data = ., aes(x = value, fill = variable, colour = variable)) +
   geom_histogram(binwidth = 1, alpha = 0.3, position = "identity") +
   coord_cartesian(xlim = c(-10, 10)) +
-  ggtitle(title_string)
+  ggtitle(title_string, "Peptides with >1 PSM")
 ```
 
 
