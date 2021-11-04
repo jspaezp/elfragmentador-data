@@ -6,8 +6,6 @@ output:
 params:
   psms: ~/git/elfragmentador-data/ef_evaluation/Arabidopsis.csv.csv
   scan_metadata: ~/git/elfragmentador-data/raw_scan_metadata/RV-Col_DEX_XIII_5-A.csv
-  out_prosit_in: ~/git/elfragmentador-data/ef_evaluation_prosit/Input_Arabidopsis.csv
-  out_psms_prosit_filtered: ~/git/elfragmentador-data/ef_evaluation_prosit/Comparisson_Arabidopsis.csv
 ---
 
 ```{r, setup, include=FALSE}
