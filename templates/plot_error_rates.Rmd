@@ -112,7 +112,7 @@ for (mod in unique_modifications) {
     g <- g + ggtitle(mod)
     print(g)
     
-    g <- g + geom_smooth(formula = y ~ splines::ns(x, 2), alpha=0.5)
+    g <- g + geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5)
 
     print(g)
 }
@@ -130,7 +130,7 @@ for (mod in unique_modifications) {
       y = Prediction_irt,
       colour = grepl(mod, Peptide))) +
     geom_point(size=1, alpha=0.1) +
-    geom_smooth(formula = y ~ splines::ns(x, 2), alpha=0.5) +
+    geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5) +
     facet_wrap(~ RawFile)
   g <- g + ggtitle(mod)
   print(g)
@@ -143,7 +143,8 @@ for (mod in unique_modifications) {
 df <- df %>%
   group_by(RawFile) %>% 
   mutate(
-    ResidualRT = (RetentionTime - predict(lm(formula = RetentionTime ~ splines::ns(Prediction_irt, df=2)))))
+    ResidualRT = (RetentionTime - predict(lm(formula = RetentionTime ~ splines::ns(
+      Prediction_irt, df=4, intercept = TRUE)))))
 
 top_residuals <- df %>%
     top_n(200, abs(ResidualRT)) %>% 
@@ -248,7 +249,7 @@ tmp_df %>%
 
 
 ```{r fig.height=4, fig.width=3}
-title_string <- paste0("Median ResidualRT: ", format(median(df$ResidualRT), digits = 3))
+title_string <- paste0("Median PredResidualRT: ", format(median(df$ResidualRT), digits = 3))
 
 ggplot(df, aes(x = ResidualRT)) +
   geom_histogram(binwidth = 1, position = "identity", alpha = 0.5) + 
