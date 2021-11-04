@@ -177,7 +177,7 @@ for (mod in unique_modifications) {
     
     g <- ggplot(
       df, aes(x = ResidualRT, fill = grepl(mod, Peptide))) +
-      geom_histogram(binwidth = 1, position = "identity") + 
+      geom_histogram(binwidth = 0.5, position = "identity", alpha = 0.5) + 
       xlim(-20, 20) +
       ggtitle(mod)
     
@@ -230,10 +230,13 @@ tmp_df <- df %>%
   filter(n() > 1) %>%
   mutate(RTError = RetentionTime - mean(RetentionTime)) %>%
   ungroup() %>%
-  select(RTError, ResidualRT)
+  select(Sample = RTError, Prediction = ResidualRT)
 
-label_data <- lapply(tmp_df, median)
-title_string <- paste(names(label_data), format(unlist(label_data), digits = 3), sep = ": ", collapse = "\n")
+label_data <- lapply(tmp_df, function(x) {mean(abs(x))})
+title_string <- paste(
+  paste0("MeanAbsError ", names(label_data)),
+  format(unlist(label_data), digits = 3),
+  sep = ": ", collapse = "\n")
 
 tmp_df %>%
   reshape2::melt() %>%
@@ -248,7 +251,7 @@ tmp_df %>%
 title_string <- paste0("Median ResidualRT: ", format(median(df$ResidualRT), digits = 3))
 
 ggplot(df, aes(x = ResidualRT)) +
-  geom_histogram(binwidth = 1, position = "identity") + 
+  geom_histogram(binwidth = 1, position = "identity", alpha = 0.5) + 
   xlim(-20, 20) + 
   ggtitle(title_string)
 ```
@@ -284,7 +287,7 @@ for (mod in unique_modifications) {
     
     g <- tmp_df2 %>%
         ggplot(aes(x = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
-        geom_histogram(alpha=0.8, binwidth = 1, position = "identity") +
+        geom_histogram(alpha=0.8, binwidth = 0.01, position = "identity") +
         geom_vline(xintercept = median(1 -tmp_df2$Loss_loss_angle)) +
         geom_text(
           x = median(1 -tmp_df2$Loss_loss_angle),
