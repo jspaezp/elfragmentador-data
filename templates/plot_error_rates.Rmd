@@ -112,7 +112,7 @@ for (mod in unique_modifications) {
     g <- g + ggtitle(mod)
     print(g)
     
-    g <- g + geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5)
+    g <- g + geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE)
 
     print(g)
 }
@@ -130,7 +130,7 @@ for (mod in unique_modifications) {
       y = Prediction_irt,
       colour = grepl(mod, Peptide))) +
     geom_point(size=1, alpha=0.1) +
-    geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5) +
+    geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE) +
     facet_wrap(~ RawFile)
   g <- g + ggtitle(mod)
   print(g)
@@ -219,6 +219,7 @@ for (pep in top_residuals$Peptide) {
         geom_point(shape = ".") + 
         geom_point(data = weird_peptide)
     g <- g + ggtitle(pep, unique(weird_peptide$Proteins))
+    g <- g + geom_smooth(formula = y ~ splines::ns(x, 4, intercept = TRUE), alpha=0.5, se = FALSE)
     print(g)
 }
 
@@ -249,12 +250,12 @@ tmp_df %>%
 
 
 ```{r fig.height=4, fig.width=3}
-title_string <- paste0("Median PredResidualRT: ", format(median(df$ResidualRT), digits = 3))
+title_string <- format(median(abs(df$ResidualRT)), digits = 3)
 
 ggplot(df, aes(x = ResidualRT)) +
   geom_histogram(binwidth = 1, position = "identity", alpha = 0.5) + 
   xlim(-20, 20) + 
-  ggtitle(title_string)
+  ggtitle("MedianAbsoluteError\nPredictedRT", title_string)
 ```
 
 
