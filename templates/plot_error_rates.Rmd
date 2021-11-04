@@ -39,7 +39,7 @@ head(df)
 ```{r}
 df <- df %>% 
     mutate(
-      StripPeptide = gsub("\\[.{7}\\]", "", Peptide) %>%
+      StripPeptide = gsub("\\[.{7,8}\\]", "", Peptide) %>%
           gsub("(^.*?\\.)|(\\..*$)", "", ., perl = TRUE)) %>%
     mutate_at(
       vars(matches("loss|irt")),
