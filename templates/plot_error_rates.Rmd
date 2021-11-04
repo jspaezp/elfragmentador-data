@@ -64,14 +64,16 @@ prosit_input_df <- df %>%
     sequence = gsub("(^[A-Z-]{0,3}\\.)|(\\.[A-Z-]{0,3}$)", "", Peptide) %>%
       gsub("M\\[15.9949\\]", "M(ox)", .)) %>% 
   filter(!grepl("\\[", sequence), ! sequence %in% exclusion_list) %>%
-  filter(PepLength < 30)
+  filter(PepLength < 30) %>%
+  unique()
 
 rm(exclusion_list)
 
 prosit_in <- prosit_input_df %>% select(
   modified_sequence = sequence,
   collision_energy = CollisionEnergy,
-  precursor_charge=charge)
+  precursor_charge=charge) %>%
+  unique()
 
 
 dir.create(dirname(params$out_prosit_in), recursive = TRUE) 
@@ -99,7 +101,12 @@ unique_modifications
 
 ```{r fig.height=8, fig.width=10}
 for (mod in unique_modifications) {
-    g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) + 
+    g <- ggplot(
+      df,
+      aes(
+        x = RetentionTime,
+        y = Prediction_irt,
+        colour = grepl(mod, Peptide))) + 
       geom_point(shape = ".")  +
     facet_wrap(~ RawFile)
     g <- g + ggtitle(mod)
@@ -112,9 +119,16 @@ for (mod in unique_modifications) {
 mod
 
 for (mod in unique_modifications) {
-  tmp_df <- df %>% group_by(Peptide) %>% top_n(1, `mokapot score`)
+  tmp_df <- df %>% 
+    group_by(Peptide) %>% 
+    top_n(1, `mokapot score`)
 
-  g <- ggplot(tmp_df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) +
+  g <- ggplot(
+    tmp_df,
+    aes(
+      x = RetentionTime,
+      y = Prediction_irt,
+      colour = grepl(mod, Peptide))) +
     geom_point(size=1, alpha=0.1) +
     geom_smooth(formula = y ~ splines::ns(x, 2), alpha=0.5) +
     facet_wrap(~ RawFile)
@@ -139,7 +153,17 @@ top_residuals <- df %>%
     top_n(10, abs(ResidualRT))
 
 for (mod in unique_modifications) {
-    g <- ggplot(df, aes(x = RetentionTime, y = Prediction_irt, colour = grepl(mod, Peptide))) + geom_point(shape = ".")
+    g <- ggplot(
+      df, 
+      aes(
+        x = RetentionTime,
+        y = Prediction_irt,
+        colour = grepl(mod, Peptide))) +
+      geom_point(shape = ".")
+    
+    g <- g + ggtitle(mod)
+    print(g)
+    
     g <- g + ggrepel::geom_text_repel(
         data = top_residuals, 
         colour = "black",
@@ -149,29 +173,31 @@ for (mod in unique_modifications) {
         force = 300,
         max.overlaps = 20)
     
-    g <- g + ggtitle(mod)
     print(g)
     
     g <- ggplot(
       df, aes(x = ResidualRT, fill = grepl(mod, Peptide))) +
-      geom_histogram(bins = 100) + 
-      xlim(-20, 20)+ ggtitle(mod)
+      geom_histogram(binwidth = 1, position = "identity") + 
+      xlim(-20, 20) +
+      ggtitle(mod)
     
     print(g)
     
     g <- ggplot(
       df, aes(y = ResidualRT, fill = grepl(mod, Peptide))) +
-      geom_boxplot() + ggtitle(mod)
+      geom_boxplot() +
+      ggtitle(mod)
     
     print(g)
     
      g <- ggplot(
-      df,  aes(
-        y = abs(ResidualRT),
-        x=grepl(mod, Peptide),
-        colour = grepl(mod, Peptide),
-        fill= grepl(mod, Peptide))) +
-      geom_violin(draw_quantiles = c(0.5), alpha=0.3) + ggtitle(mod) + coord_cartesian(ylim=c(0, 10))
+       df,  aes(
+         y = abs(ResidualRT),
+         x=grepl(mod, Peptide),
+         colour = grepl(mod, Peptide),
+         fill= grepl(mod, Peptide))) +
+       geom_violin(draw_quantiles = c(0.5), alpha=0.3) + 
+       ggtitle(mod) + coord_cartesian(ylim=c(0, 10))
     
     print(g)
     
@@ -198,10 +224,33 @@ for (pep in top_residuals$Peptide) {
 
 ```
 
+```{r fig.height=3.5, fig.width=5}
+tmp_df <- df %>% 
+  group_by(Peptide) %>% 
+  filter(n() > 1) %>%
+  mutate(RTError = RetentionTime - mean(RetentionTime)) %>%
+  ungroup() %>%
+  select(RTError, ResidualRT)
+
+label_data <- lapply(tmp_df, median)
+title_string <- paste(names(label_data), format(unlist(label_data), digits = 3), sep = ": ", collapse = "\n")
+
+tmp_df %>%
+  reshape2::melt() %>%
+  ggplot(data = ., aes(x = value, fill = variable, colour = variable)) +
+  geom_histogram(binwidth = 1, alpha = 0.3, position = "identity") +
+  coord_cartesian(xlim = c(-10, 10)) +
+  ggtitle(title_string)
+```
+
+
 ```{r fig.height=4, fig.width=3}
+title_string <- paste0("Median ResidualRT: ", format(median(df$ResidualRT), digits = 3))
+
 ggplot(df, aes(x = ResidualRT)) +
-  geom_histogram(bins = 100) + 
-  xlim(-20, 20)
+  geom_histogram(binwidth = 1, position = "identity") + 
+  xlim(-20, 20) + 
+  ggtitle(title_string)
 ```
 
 
@@ -227,16 +276,23 @@ for (mod in unique_modifications) {
         geom_boxplot(alpha=0.8, outlier.size = 0.5, outlier.alpha = 0.5) +
         geom_text(
             alpha = 1, data = count_df, y = 0.05,
-            aes(label = n, colour = ModifiedPeptide), position = position_dodge2(width=0.9, padding = 0.02))
+            aes(label = n, colour = ModifiedPeptide),
+            position = position_dodge2(width=0.9, padding = 0.02))
+    
     g <- g + ggtitle(mod) + ylim(0,1)
     print(g)
     
     g <- tmp_df2 %>%
         ggplot(aes(x = 1 -Loss_loss_angle, fill = ModifiedPeptide)) +
-        geom_histogram(alpha=0.8,bins=100) +
+        geom_histogram(alpha=0.8, binwidth = 1, position = "identity") +
         geom_vline(xintercept = median(1 -tmp_df2$Loss_loss_angle)) +
-        geom_text(x = median(1 -tmp_df2$Loss_loss_angle), y = 50, label=median(1 -tmp_df2$Loss_loss_angle), inherit.aes = FALSE) +
-        xlim(0,1) + coord_cartesian(expand=FALSE)
+        geom_text(
+          x = median(1 -tmp_df2$Loss_loss_angle),
+          y = 100,
+          label=median(1 -tmp_df2$Loss_loss_angle),
+          inherit.aes = FALSE) +
+        xlim(0,1) +
+        coord_cartesian(expand=FALSE)
     g <- g + ggtitle(mod, median(1 -tmp_df2$Loss_loss_angle))
     print(g)
     
