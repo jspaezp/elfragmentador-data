@@ -1,8 +1,7 @@
 #!/bin/bash
 
 for i in {1..1} ; do
-    /scratch/brown/jpaezpae/conda_envs/ef_data3/bin/poetry \
-        run snakemake \
+      snakemake \
         --reason \
         --show-failed-logs \
         --printshellcmds \

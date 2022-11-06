@@ -129,11 +129,12 @@ module fasta_preparations:
 
 use rule * from fasta_preparations
 
-module raw_file_operations:
-    snakefile:
-        "./snakemodules/raw_file_operations.smk"
-
-use rule * from raw_file_operations
+# module raw_file_operations:
+#     snakefile:
+#         "./snakemodules/raw_file_operations.smk"
+# 
+# use rule * from raw_file_operations
+include: "./snakemodules/raw_file_operations.smk"
 
 # module search_operations:
 #     snakefile:
@@ -270,6 +271,10 @@ rule eval_all:
         *common_inputs,
         *eval_inputs,
 
+
+rule get_raw_data:
+    input:
+        [f"raw/{sample}.raw" for sample in samples["sample"]],
 
 rule get_data:
     input:
