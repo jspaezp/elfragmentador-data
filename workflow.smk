@@ -208,7 +208,10 @@ use rule bibliospec from bibliospec_opts as bbspec_run with:
 
 def aggregate_input(wildcards):
     split_psms_output = checkpoints.split_mokapot_psms.get(**wildcards).output[0]
-    nce_glob = glob_wildcards(os.path.join(split_psms_output, "{experiment}.mokapot.psms.NCE{NCE}.txt")).NCE
+    globbing_path = f"{wildcards.experiment}.mokapot.psms"
+    globbing_path = os.path.join(split_psms_output, globbing_path + ".NCE{NCE}.txt")
+    glob_wildcards = glob_wildcards(globbing_path)
+    glob_wildcards = glob_wildcards.NCE
     out = expand("bibliospec/{experiment}.NCE{NCE}.blib", experiment=wildcards.experiment, NCE=nce_glob)
     return out
 
