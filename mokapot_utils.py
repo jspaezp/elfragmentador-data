@@ -227,7 +227,10 @@ def split_mokapot_psms_file(psms_file, spec_metadata_list, out_dir):
 
     # read both files
     lg_logger.info(f"Reading metadata file {spec_metadata_list}")
-    metadata_df = pd.read_csv(spec_metadata_list, sep="\t", dtype={"ScanNr": np.int32})
+    metadata_df = pd.concat([
+        pd.read_csv(meta_file, sep="\t", dtype={"ScanNr": np.int32})
+        for meta_file in spec_metadata_list
+    ])
     lg_logger.info(f"Reading psms file {psms_file}")
     psms_df = pd.read_csv(
         psms_file,
