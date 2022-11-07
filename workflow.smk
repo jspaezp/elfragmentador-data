@@ -182,13 +182,35 @@ module bibliospec_opts:
     snakefile:
         "./snakemodules/bibliospec_operations.smk"
 
-use rule bibliospec from bibliospec_opts as bbspec_run with:
+use checkpoint split_mokapot_psms from bibliospec_opts as split_mokapot_psms with:
     input:
         psms = "mokapot/{experiment}.mokapot.psms.txt",
+        spec_metadata = get_exp_spec_metadata,
+    output:
+        split_files_dir=directory("split_mokapot/{experiment}/"),
+        # The output files will follow this template
+        # out_name_template = Path(psms_file).stem + ".NCE{}.txt"
+
+
+use rule bibliospec from bibliospec_opts as bbspec_run with:
+    input:
+        psms = "split_mokapot/{experiment}/{experiment}.mokapot.psms.NCE{NCE}.txt",
         mzML = get_mokapot_ins("raw/", ".mzML"),
     output:
-        ssl_file = "bibliospec/{experiment}.ssl",
-        library_name = "bibliospec/{experiment}.blib",
+        ssl_file = "bibliospec/{experiment}.NCE{NCE}.ssl",
+        library_name = "bibliospec/{experiment}.NCE{NCE}.blib",
+
+
+def aggregate_input(wildcards):
+    split_psms_output = checkpoints.split_mokapot_psms.get(**wildcards).output[0]
+    nce_glob = glob_wildcards(os.path.join(split_psms_output, "{experiment}.mokapot.psms.NCE{NCE}.txt")).NCE
+    out = expand("bibliospec/{experiment}.NCE{NCE}.blib", experiment=wildcards.experiment, NCE=nce_glob)
+    return out
+
+
+rule all_split_blibspecs:
+    input:
+        aggregate_input
 
 
 common_inputs = [
