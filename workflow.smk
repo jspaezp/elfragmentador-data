@@ -172,9 +172,23 @@ module train_data_operations:
 include: "./snakemodules/elfragmentador_operations.smk"
 
 
-module ptm_operations:
+# module ptm_operations:
+#     snakefile:
+#         "./snakemodules/ptm_operations.smk"
+
+include: "./snakemodules/ptm_operations.smk"
+
+module bibliospec_opts:
     snakefile:
-        "./snakemodules/ptm_operations.smk"
+        "./snakemodules/bibliospec_operations.smk"
+
+use rule bibliospec from bibliospec_opts as bbspec_run with:
+    input:
+        psms = "mokapot/{experiment}.mokapot.psms.txt",
+        mzML = get_mokapot_ins("raw/", ".mzML"),
+    output:
+        ssl_file = "bibliospec/{experiment}.ssl",
+        library_name = "bibliospec/{experiment}.blib",
 
 
 common_inputs = [
@@ -200,6 +214,8 @@ common_inputs = [
         for experiment in UNIQ_EXP
     ],
 ]
+
+    
 
 all_inputs = [
     [
@@ -281,3 +297,21 @@ rule get_data:
         [f"raw/{sample}.raw" for sample in samples["sample"]],
         [f"raw/{sample}.mzML" for sample in samples["sample"]],
 
+rule mokapot_stuff:
+    input:
+        [
+            f"mokapot/{experiment}.mokapot.weights.csv"
+            for experiment in UNIQ_EXP
+        ],
+        [f"comet/{sample}.pin" for sample in samples["sample"]],
+
+rule bibliospec_stuff:
+    input:
+        [
+            f"bibliospec/{experiment}.blib"
+            for experiment in UNIQ_EXP
+        ],
+
+rule scan_metadata:
+    input:
+        ["raw_scan_metadata/" + sample + ".csv" for sample in samples["sample"]]
