@@ -215,7 +215,8 @@ def aggregate_input(wildcards):
 
 rule all_split_blibspecs:
     input:
-        aggregate_input
+        aggregate_input,
+        psms = "mokapot/{experiment}.mokapot.psms.txt",
 
 
 common_inputs = [
