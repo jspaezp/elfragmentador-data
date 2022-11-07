@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import random
 from datetime import datetime
+from mokapot_utils import split_mokapot_psms_file
 
 random.seed(42)
 
@@ -182,15 +183,19 @@ module bibliospec_opts:
     snakefile:
         "./snakemodules/bibliospec_operations.smk"
 
-use checkpoint split_mokapot_psms from bibliospec_opts as split_mokapot_psms with:
+# Note that this is a checkpoint, not a rule
+checkpoint split_mokapot_psms:
     input:
         psms = "mokapot/{experiment}.mokapot.psms.txt",
         spec_metadata = get_exp_spec_metadata,
     output:
         split_files_dir=directory("split_mokapot/{experiment}/"),
-        # The output files will follow this template
-        # out_name_template = Path(psms_file).stem + ".NCE{}.txt"
-
+    run:
+        shell(f"mkdir -p {output.split_files_dir}")
+        print(input.spec_metadata)
+        split_mokapot_psms_file(
+            input.psms, input.spec_metadata, output.split_files_dir
+        )
 
 use rule bibliospec from bibliospec_opts as bbspec_run with:
     input:

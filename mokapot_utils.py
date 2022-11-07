@@ -3,7 +3,9 @@ from pyteomics.mzml import PreIndexedMzML
 import pandas as pd
 import numpy as np
 from tqdm.auto import tqdm
+from pathlib import Path
 
+from loguru import logger as lg_logger
 
 def filter_mokapot_psm(psm_input: str, peptide_input: str):
     """
@@ -204,6 +206,64 @@ def parse_mokapot_log(path):
 
     return pd.concat(df_list)
 
+
+def split_mokapot_psms_file(psms_file, spec_metadata_list, out_dir):
+    """
+
+    Example section of metadata file
+        ScanNr,CollisionEnergy,RetentionTime,SpecId
+        1032,25.0,9.2224227088,raw/01625b_GA1-TUM_first_pool_1_01_01-3xHCD-1h-R1
+        1033,30.0,9.223171026667,raw/01625b_GA1-TUM_first_pool_1_01_01-3xHCD-1h-R1
+        1034,35.0,9.224075944267,raw/01625b_GA1-TUM_first_pool_1_01_01-3xHCD-1h-R1
+
+    Example section of psms file
+        SpecId  Label   ScanNr  ExpMass CalcMass        Peptide mokapot score   mokapot
+        raw/03210a_BF4-TUM_aspn_16_01_01-3xHCD-1h-R1_3465_4_2   False   3465    1825.04
+        raw/03210a_BE5-TUM_aspn_5_01_01-3xHCD-1h-R1_12584_2_1   False   12584   1327.60
+        raw/03210a_BF4-TUM_aspn_16_01_01-3xHCD-1h-R1_3055_4_2   False   3055    1825.04
+        raw/03210a_BE10-TUM_aspn_10_01_01-3xHCD-1h-R1_11237_2_1 False   11237   1327.
+    """
+    out_name_template = Path(psms_file).stem + ".NCE{}.txt"
+
+    # read both files
+    lg_logger.info(f"Reading metadata file {spec_metadata_list}")
+    metadata_df = pd.read_csv(spec_metadata_list, sep="\t", dtype={"ScanNr": np.int32})
+    lg_logger.info(f"Reading psms file {psms_file}")
+    psms_df = pd.read_csv(
+        psms_file,
+        sep="\t",
+        dtype={
+            "SpecId": str,
+            "Label": bool,
+            "ScanNr": np.int32,
+            "ExpMass": np.float64,
+            "CalcMass": np.float64,
+            "Peptide": str,
+            "mokapot score": np.float32,
+            "mokapot q-value": np.float32,
+            "mokapot PEP": np.float32,
+            "Proteins": str,
+        },
+    )
+
+    # Process psms file to get the spec id equivalent from the spec id
+    lg_logger.info("Processing psms file")
+    psms_df["RawFile"] = [SPEC_ID_REGEX.match(SpecId).groups()[0] for SpecId in psms_df.SpecId]
+
+    # Left join the two files
+    metadata_df.rename(columns = {'SpecId':'RawFile'}, inplace = True)
+    lg_logger.info("Joining metadata and psms files")
+    joined_df = psms_df.merge(metadata_df, on="RawFile", how="left")
+    
+    # Write the output
+    lg_logger.info("Writing output")
+    for nce in joined_df.CollisionEnergy.unique():
+        out_name = out_name_template.format(nce)
+        out_name = Path(out_dir) / out_name
+        lg_logger.info(f"Writing output to {out_name}")
+        joined_df[joined_df.CollisionEnergy == nce].to_csv(
+            out_name, sep="\t", index=False, header=True
+        )
 
 if __name__ == "__main__":
     # spectrast_in = "spectrast_in/ProteomeToolsSP.spectrast.mokapot.psms.tsv"
