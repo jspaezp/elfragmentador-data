@@ -172,9 +172,45 @@ module train_data_operations:
 include: "./snakemodules/elfragmentador_operations.smk"
 
 
-module ptm_operations:
+# module ptm_operations:
+#     snakefile:
+#         "./snakemodules/ptm_operations.smk"
+
+include: "./snakemodules/ptm_operations.smk"
+
+module bibliospec_opts:
     snakefile:
-        "./snakemodules/ptm_operations.smk"
+        "./snakemodules/bibliospec_operations.smk"
+
+use checkpoint split_mokapot_psms from bibliospec_opts as split_mokapot_psms with:
+    input:
+        psms = "mokapot/{experiment}.mokapot.psms.txt",
+        spec_metadata = get_exp_spec_metadata,
+    output:
+        split_files_dir=directory("split_mokapot/{experiment}/"),
+        # The output files will follow this template
+        # out_name_template = Path(psms_file).stem + ".NCE{}.txt"
+
+
+use rule bibliospec from bibliospec_opts as bbspec_run with:
+    input:
+        psms = "split_mokapot/{experiment}/{experiment}.mokapot.psms.NCE{NCE}.txt",
+        mzML = get_mokapot_ins("raw/", ".mzML"),
+    output:
+        ssl_file = "bibliospec/{experiment}.NCE{NCE}.ssl",
+        library_name = "bibliospec/{experiment}.NCE{NCE}.blib",
+
+
+def aggregate_input(wildcards):
+    split_psms_output = checkpoints.split_mokapot_psms.get(**wildcards).output[0]
+    nce_glob = glob_wildcards(os.path.join(split_psms_output, "{experiment}.mokapot.psms.NCE{NCE}.txt")).NCE
+    out = expand("bibliospec/{experiment}.NCE{NCE}.blib", experiment=wildcards.experiment, NCE=nce_glob)
+    return out
+
+
+rule all_split_blibspecs:
+    input:
+        aggregate_input
 
 
 common_inputs = [
@@ -200,6 +236,8 @@ common_inputs = [
         for experiment in UNIQ_EXP
     ],
 ]
+
+    
 
 all_inputs = [
     [
@@ -281,3 +319,21 @@ rule get_data:
         [f"raw/{sample}.raw" for sample in samples["sample"]],
         [f"raw/{sample}.mzML" for sample in samples["sample"]],
 
+rule mokapot_stuff:
+    input:
+        [
+            f"mokapot/{experiment}.mokapot.weights.csv"
+            for experiment in UNIQ_EXP
+        ],
+        [f"comet/{sample}.pin" for sample in samples["sample"]],
+
+rule bibliospec_stuff:
+    input:
+        [
+            f"bibliospec/{experiment}.blib"
+            for experiment in UNIQ_EXP
+        ],
+
+rule scan_metadata:
+    input:
+        ["raw_scan_metadata/" + sample + ".csv" for sample in samples["sample"]]

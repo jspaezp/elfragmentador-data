@@ -55,7 +55,7 @@ rule arabidopsis_fasta:
         """
         mkdir -p fasta
         wget \
-            https://www.uniprot.org/uniprot/?query=proteome:UP000006548%20reviewed:yes\&format\=fasta \
+            'https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=%28proteome%3AUP000006548%29%20AND%20%28reviewed%3Atrue%29' \
             -O fasta/arabidopsis.fasta
         """
 
@@ -67,7 +67,7 @@ rule human_fasta:
         """
         mkdir -p fasta
         wget \
-            https://www.uniprot.org/uniprot/\?query\=proteome:UP000005640%20reviewed:yes\&format\=fasta \
+            'https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=%28proteome%3AUP000005640%29%20AND%20%28reviewed%3Atrue%29' \
             -O fasta/human.fasta
         """
 
@@ -79,7 +79,7 @@ rule yeast_fasta:
         """
         mkdir -p fasta
         wget \
-            https://www.uniprot.org/uniprot/\?query\=proteome:UP000002311%20reviewed:yes\&format\=fasta \
+            'https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=%28proteome%3AUP000002311%29%20AND%20%28reviewed%3Atrue%29' \
             -O fasta/yeast.fasta
         """
 
