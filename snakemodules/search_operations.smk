@@ -3,7 +3,7 @@ import matplotlib as mpl
 mpl.use("Agg")
 import matplotlib.pyplot as plt
 
-from env_setup import TPP_DOCKER, curr_dir
+from env_setup import curr_dir
 
 rule comet_phospho_params:
     input:
@@ -65,10 +65,10 @@ rule comet_nocleavage_params:
     output:
         "comet_params/comet.nocleavage.params.high_high",
     shell:
+        # Comet implemented enzyme 11 which means no cuts
         """
         cat {input} | \
-            sed -e "s/^search_enzyme_number.*/search_enzyme_number = 10/g" | \
-            sed -e "s/^10. Nothing.*/10. Nothing 1 Z -/g" \
+            sed -e "s/^search_enzyme_number.*/search_enzyme_number = 11/g"  \
             | tee {output}
         """
 
@@ -105,10 +105,10 @@ rule nocleav_comet_TMT_params:
     output:
         "comet_params/comet.TMT.nocleavage.params.high_high",
     shell:
+        # Comet implemented enzyme 11 which means no cuts
         """
         cat {input} | \
-            sed -e "s/^search_enzyme_number.*/search_enzyme_number = 10/g" | \
-            sed -e "s/^10. Nothing.*/10. Nothing 1 Z -/g" \
+            sed -e "s/^search_enzyme_number.*/search_enzyme_number = 11/g"  \
             | tee {output}
         """
 
@@ -128,7 +128,6 @@ rule comet_search:
     run:
         shell("mkdir -p comet")
         cmd = (
-            f"{TPP_DOCKER} "
             f"comet -P{str(input.comet_params)} "
             f"-D{str(input.fasta)} "
             f"'{str(input.raw)}' "
