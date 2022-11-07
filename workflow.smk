@@ -216,7 +216,7 @@ def aggregate_input(wildcards):
     return out
 
 
-rule all_split_blibspecs:
+rule split_blibspecs_list:
     input:
         aggregate_input,
         psms = "mokapot/{experiment}.mokapot.psms.txt",
@@ -224,6 +224,10 @@ rule all_split_blibspecs:
         "aggregated/{experiment}/foo.txt",
     shell:
         "mkdir -p aggregated ; ls {input} > {output}"
+
+rule all_bibliospecs:
+    input:
+        [f"aggregated/{experiment}/foo.txt" for experiment in UNIQ_EXP],
 
 
 common_inputs = [
