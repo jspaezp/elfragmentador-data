@@ -220,6 +220,10 @@ rule all_split_blibspecs:
     input:
         aggregate_input,
         psms = "mokapot/{experiment}.mokapot.psms.txt",
+    output:
+        "aggregated/{experiment}/foo.txt",
+    shell:
+        "mkdir -p aggregated ; ls {input} > {output}"
 
 
 common_inputs = [
