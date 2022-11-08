@@ -272,7 +272,7 @@ rule process_parquet_tables:
         spec_metadata_table = "bibliospec_tables/{experiment}/processed.parquet",
     run:
         base_path = Path(input.spec_metadata_table).parent
-        shell(f"python ./scripts/process_bibliospec_tables.py {base_path}")
+        shell(f"python scripts/consolidate_parquet_tables.py {base_path}")
         
 
 # add checksum as 'blibID' in every table
