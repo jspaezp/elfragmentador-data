@@ -12,6 +12,8 @@ zip_aggregated_**
 rt_csv**
 spectrast_in**
 aggregated/**
+bibliospec
+bibliospec_tables
 
 templates/*.knit.md
 templates/*.utf8.md

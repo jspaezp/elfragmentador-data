@@ -15,13 +15,15 @@ pyteomics = "^4.4.2"
 matplotlib = "^3.4.1"
 lxml = "^4.6.3"
 ipykernel = "^6.2.0"
-elfragmentador = { git = "https://github.com/jspaezp/elfragmentador.git", branch = "main" }
 tqdm = "^4.62.3"
 poetry = "^1.1.11"
+loguru = "^0.6.0"
+fastparquet = "^0.8.3"
+pyarrow = "^10.0.0"
+ms2ml = "^0.0.17"
 
 [tool.poetry.dev-dependencies]
 snakefmt = "^0.4.2"
-pyarrow = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

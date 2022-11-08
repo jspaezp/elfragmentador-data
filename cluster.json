@@ -74,6 +74,12 @@
         "cpus-per-task": "10",
         "time":"2:00:00"
     },
+    "bbspec_run":
+    {
+        "mem": "16G",
+        "cpus-per-task": "4",
+        "time":"4:00:00"
+    },
     "combine_and_split_train":
     {
         "mem": "48G",
