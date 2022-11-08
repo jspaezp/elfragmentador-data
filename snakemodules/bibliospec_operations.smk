@@ -85,6 +85,7 @@ def convert_to_ssl(input_file, output_file):
         },
     )
 
+    df = df.groupby('Peptide')['mokapot score'].nlargest(10).reset_index()
     lg_logger.info("Processing File")
     out_df = pd.DataFrame([_parse_line(x) for _, x in df.iterrows()])
     lg_logger.info(f"Writting output: {output_file}")
