@@ -35,6 +35,61 @@ def temporary_links(files, target_dir):
               lg_logger.error(f"Link {link} is not a link anymore")
               raise RuntimeError(f"Link {link} is not a link anymore")
 
+SPEC_ID_REGEX = re.compile(r"^(.*)_(\d+)_(\d+)_(\d+)$")
+
+def _parse_line(line):
+    outs = SPEC_ID_REGEX.match(line.SpecId).groups()
+    file_name, spec_number, charge, _ = outs
+    file_name = Path(file_name).stem + ".mzML"
+
+    first_period = 0
+    last_period = 0
+    for i, x in enumerate(line.Peptide):
+        if x == ".":
+            if first_period == 0:
+                first_period = i
+            else:
+                last_period = i
+
+    sequence = line.Peptide[first_period + 1 : last_period]
+
+    line_out = {
+        "file": file_name,
+        "scan": spec_number,
+        "charge": charge,
+        "sequence": sequence,
+        "score-type": "PERCOLATOR QVALUE",
+        "score": line["mokapot q-value"],
+    }
+    return line_out
+
+
+def convert_to_ssl(input_file, output_file):
+    lg_logger.info(f"Reading File {input_file}")
+    df = pd.read_csv(
+        input_file,
+        sep="\t",
+        dtype={
+            "SpecId": str,
+            "Label": bool,
+            "ScanNr": np.int32,
+            "ExpMass": np.float16,
+            "CalcMass": np.float16,
+            "Peptide": str,
+            "mokapot score": np.float16,
+            "mokapot q-value": np.float32,
+            "mokapot PEP": np.float32,
+            "Proteins": str,
+        },
+    )
+
+    lg_logger.info("Processing File")
+    out_df = pd.DataFrame([_parse_line(x) for _, x in df.iterrows()])
+    lg_logger.info(f"Writting output: {output_file}")
+    out_df.to_csv(output_file, sep="\t", index=False, header=True)
+    lg_logger.info("Done")
+
+
 
 rule bibliospec:
     """Runs bibliospec to build the library
@@ -71,6 +126,30 @@ rule bibliospec:
             lg_logger.info("Running bibliospec: %s", shell_cmd)
             shell(shell_cmd)
 
+rule filter_bibliospec:
+    input:
+        library = "results/{experiment}/bibliospec/{experiment}.blib",
+    output:
+        filtered_library = "results/{experiment}/bibliospec/{experiment}.filtered.blib",
+    run:
+        """
+        BlibFilter [options] <redundant-library> <filtered-library> 
+        -m [ --memory-cache ] <size> SQLite memory cache size in Megs. Default 250M.
+        -n [ --min-peaks ] <num> Only include spectra with at least this many peaks. Default 20.
+        -s [ --min-score ] <score> Best spectrum must have at least this average score to be included. Default 0.
+        -p [ --parameter-file ] <file> File containing search parameters. Command line values override file values.
+        -v [ --verbosity ] <level> Control the level of output to stderr. (silent, error, status, warn, debug, detail, all) Default status.
+        """
+
+        shell(
+            "LC_ALL='C' BlibFilter "
+            "--memory-cache 500M "
+            "--min-peaks 20 "
+            "--min-score 0 " # Filtering should be done creating the first lib
+            "-v status "
+            "{input.library}"
+            "{output.filtered_library} "
+        )
 
 def convert_to_ssl(input_file, input_peptides, output_file):
     lg_logger.info(f"Reading File {input_peptides}")
