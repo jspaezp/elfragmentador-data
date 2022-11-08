@@ -12,7 +12,7 @@ if [[ ! -z "$(command -v docker)" ]] ; then
     docker run \
         -it --rm -e WINEDEBUG=-all \
         -v $PWD/:/data chambm/pwiz-skyline-i-agree-to-the-vendor-licenses wine msconvert.exe \
-        --zlib \
+        --zlib --64 \
          -o /data/ --verbose \
         --filter "peakPicking true 1-" \
         --filter "activation HCD" \
@@ -26,7 +26,7 @@ else
       -B `mktemp -d /dev/shm/wineXXX`:/mywineprefix \
       -w /scratch/brown/jpaezpae/pwiz_sandbox/pwiz_sandbox \
       mywine msconvert \
-         --zlib \
+         --zlib --64 \
          --filter "peakPicking true 1-" \
          --filter "activation HCD" \
          --filter "analyzer FT" \
