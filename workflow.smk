@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import random
 from datetime import datetime
+import subprocess
+import sqlite3
 
 random.seed(42)
 
@@ -15,13 +17,10 @@ timestamp = now.strftime("%Y%m%d_%H%M")
 IN_TSV = config["tsv_file"]
 CHECKPOINT = config.get("checkpoint", None)
 
-print(CHECKPOINT)
-
 samples = pd.read_table(IN_TSV, comment="#")
 samples["raw_sample"] = [x for x in samples["sample"]]
 samples["sample"] = [x.replace(" ", "") for x in samples["sample"]]
 samples=samples.set_index("sample", drop=False)
-print(samples)
 
 sample_to_raw = {k:v for k,v in zip(samples["sample"], samples["raw_sample"])}
 
@@ -185,11 +184,87 @@ module bibliospec_opts:
 use rule bibliospec from bibliospec_opts as bbspec_run with:
     input:
         psms = "mokapot/{experiment}.mokapot.psms.txt",
+        peptides = "mokapot/{experiment}.mokapot.peptides.txt",
         mzML = get_mokapot_ins("raw/", ".mzML"),
     output:
         ssl_file = "bibliospec/{experiment}.ssl",
         library_name = "bibliospec/{experiment}.blib",
 
+
+rule mzml_checksums:
+    input:
+        mzML = get_mokapot_ins("raw/", ".mzML"),
+    output:
+        mzml_checksums = "bibliospec/{experiment}_mzml_checksums.txt"
+    run:
+        cmd = f"sha256sum {' '.join(input.mzML)} | tee {output.mzml_checksums}"
+        shell(cmd)
+
+rule export_tables:
+    input:
+        library_name = "bibliospec/{experiment}.blib",
+        mzml_checksums = "bibliospec/{experiment}_mzml_checksums.txt",
+        spec_metadata = get_exp_spec_metadata,
+    output:
+        libinfo_table = "bibliospec_tables/{experiment}/libinfo.parquet",
+        mods_table = "bibliospec_tables/{experiment}/mods.parquet",
+        spec_table = "bibliospec_tables/{experiment}/spec.parquet",
+        spec_sourcefiles = "bibliospec_tables/{experiment}/spec_sourcefiles.parquet",
+        spec_metadata_table = "bibliospec_tables/{experiment}/spec_meta.parquet",
+
+    run:
+        out = subprocess.run(["sha256sum", str(input.library_name)], capture_output=True)
+        blib_checksum = out.stdout.strip().decode().split(" ")[0]
+        file = str(input.library_name)
+
+        # Libinfo Table
+        query = "select * from LibInfo"
+        with sqlite3.connect(file) as conn:
+            df = pd.read_sql_query(query,conn)
+        df["blibID"] = blib_checksum
+        df.to_parquet(output.libinfo_table)
+        
+
+        # Mods table
+        query = "select * from Modifications"
+        with sqlite3.connect(file) as conn:
+            df = pd.read_sql_query(query,conn)
+        df["blibID"] = blib_checksum
+        df.to_parquet(output.mods_table)
+
+        # Spec Table
+        query = f"SELECT * FROM RefSpectra JOIN RefSpectraPeaks"
+        query += " ON RefSpectra.id=RefSpectraPeaks.RefSpectraID"
+        with sqlite3.connect(file) as conn:
+            df = pd.read_sql_query(query,conn)
+        df["blibID"] = blib_checksum
+        df.to_parquet(output.spec_table)
+
+        # Spec Sourcefiles
+        query = "select * from SpectrumSourceFiles"
+        with sqlite3.connect(file) as conn:
+            df = pd.read_sql_query(query,conn)
+
+        df["RawFile"] = [Path(x).stem for x in df["fileName"]]
+
+        df2 = pd.read_table(input.mzml_checksums, sep='\s+', names=['sha256sum', 'RawFile'])
+        df2["RawFile"] = [Path(x).stem for x in df2["RawFile"]]
+
+        df = pd.merge(df, df2, on = "RawFile")
+        df.to_parquet(output.spec_sourcefiles)
+
+        # Spec Metadata
+        df = pd.concat([pd.read_csv(x) for x in input.spec_metadata]) 
+        df["RawFile"] = [Path(x).stem for x in df["SpecId"]]
+        del df["SpecId"]
+        df["blibID"] = blib_checksum
+        df.to_parquet(output.spec_metadata_table)
+
+
+
+# add checksum as 'blibID' in every table
+# Add table of spec metadata (with lib id)
+# Add table of mzML file checksums
 
 common_inputs = [
     [
@@ -273,9 +348,6 @@ eval_inputs = [
 ]
 
 
-print(all_inputs)
-
-
 rule all:
     input:
         *common_inputs,
@@ -315,3 +387,7 @@ rule bibliospec_stuff:
 rule scan_metadata:
     input:
         ["raw_scan_metadata/" + sample + ".csv" for sample in samples["sample"]]
+
+rule parquet_files:
+    input:
+        [f"bibliospec_tables/{experiment}/spec.parquet" for experiment in UNIQ_EXP],
