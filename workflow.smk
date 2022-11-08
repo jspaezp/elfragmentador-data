@@ -261,6 +261,19 @@ rule export_tables:
         df.to_parquet(output.spec_metadata_table)
 
 
+rule process_parquet_tables:
+    input:
+        libinfo_table = "bibliospec_tables/{experiment}/libinfo.parquet",
+        mods_table = "bibliospec_tables/{experiment}/mods.parquet",
+        spec_table = "bibliospec_tables/{experiment}/spec.parquet",
+        spec_sourcefiles = "bibliospec_tables/{experiment}/spec_sourcefiles.parquet",
+        spec_metadata_table = "bibliospec_tables/{experiment}/spec_meta.parquet",
+    output:
+        spec_metadata_table = "bibliospec_tables/{experiment}/processed.parquet",
+    run:
+        base_path = Path(input.spec_metadata_table).parent
+        shell(f"python ./scripts/process_bibliospec_tables.py {base_path}")
+        
 
 # add checksum as 'blibID' in every table
 # Add table of spec metadata (with lib id)
@@ -390,4 +403,4 @@ rule scan_metadata:
 
 rule parquet_files:
     input:
-        [f"bibliospec_tables/{experiment}/spec.parquet" for experiment in UNIQ_EXP],
+        [f"bibliospec_tables/{experiment}/processed.parquet" for experiment in UNIQ_EXP],

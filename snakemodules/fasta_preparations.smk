@@ -142,6 +142,8 @@ rule proteometools2_fasta:
     output:
         "fasta/{basename}_indiv_irt.fasta",
     shell:
+        # No crap is added because this will be searched without cleavages,
+        # I would need to add every peptide as as fasta entry ...
         """
         cat {input} > {output}
         """
