@@ -64,32 +64,6 @@ def _parse_line(line):
     return line_out
 
 
-def convert_to_ssl(input_file, output_file):
-    lg_logger.info(f"Reading File {input_file}")
-    df = pd.read_csv(
-        input_file,
-        sep="\t",
-        dtype={
-            "SpecId": str,
-            "Label": bool,
-            "ScanNr": np.int32,
-            "ExpMass": np.float16,
-            "CalcMass": np.float16,
-            "Peptide": str,
-            "mokapot score": np.float16,
-            "mokapot q-value": np.float32,
-            "mokapot PEP": np.float32,
-            "Proteins": str,
-        },
-    )
-
-    lg_logger.info("Processing File")
-    out_df = pd.DataFrame([_parse_line(x) for _, x in df.iterrows()])
-    lg_logger.info(f"Writting output: {output_file}")
-    out_df.to_csv(output_file, sep="\t", index=False, header=True)
-    lg_logger.info("Done")
-
-
 
 rule bibliospec:
     """Runs bibliospec to build the library
