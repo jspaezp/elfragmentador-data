@@ -7,7 +7,6 @@ from datetime import datetime
 import subprocess
 import sqlite3
 
-
 random.seed(42)
 
 # This prevents the command failing without an x server
@@ -182,29 +181,14 @@ module bibliospec_opts:
     snakefile:
         "./snakemodules/bibliospec_operations.smk"
 
-
-def aggregate_input(wildcards):
-    split_psms_output = checkpoints.split_mokapot_psms.get(**wildcards).output[0]
-    globbing_path = f"{wildcards.experiment}.mokapot.psms"
-    globbing_path = os.path.join(split_psms_output, globbing_path + ".NCE{NCE}.txt")
-    glob_wildcards = glob_wildcards(globbing_path)
-    glob_wildcards = glob_wildcards.NCE
-    out = expand("bibliospec/{experiment}.NCE{NCE}.blib", experiment=wildcards.experiment, NCE=nce_glob)
-    return out
-
-
-rule split_blibspecs_list:
+use rule bibliospec from bibliospec_opts as bbspec_run with:
     input:
-        aggregate_input,
         psms = "mokapot/{experiment}.mokapot.psms.txt",
+        peptides = "mokapot/{experiment}.mokapot.peptides.txt",
+        mzML = get_mokapot_ins("raw/", ".mzML"),
     output:
-        "aggregated/{experiment}/foo.txt",
-    shell:
-        "mkdir -p aggregated ; ls {input} > {output}"
-
-rule all_bibliospecs:
-    input:
-        [f"aggregated/{experiment}/foo.txt" for experiment in UNIQ_EXP],
+        ssl_file = "bibliospec/{experiment}.ssl",
+        library_name = "bibliospec/{experiment}.blib",
 
 
 rule mzml_checksums:
