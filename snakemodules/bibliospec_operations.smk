@@ -81,7 +81,7 @@ rule bibliospec:
         library_name="results/{experiment}/bibliospec/{experiment}.blib",
     run:
         lg_logger.info("Converting psms to ssl")
-        cmd = f"scripts/psms_to_ssl.py --input_file {input.psms} --input_peptides {input.peptides} --output_file {output.ssl_file}"
+        cmd = f"python scripts/psms_to_ssl.py --input_file {input.psms} --input_peptides {input.peptides} --output_file {output.ssl_file}"
         shell(cmd)
         lg_logger.info("Done Converting psms to ssl")
 
