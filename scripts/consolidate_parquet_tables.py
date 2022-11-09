@@ -7,6 +7,7 @@ from ms2ml.landmarks import IRT_PEPTIDES
 from tqdm.auto import tqdm
 from loguru import logger as lg_logger
 from sklearn.svm import SVR
+from sklearn.linear_model import HuberRegressor
 import uniplot
 from pathlib import Path
 
@@ -121,9 +122,6 @@ bibliospec_tables/Ymod_Unmod/mods.parquet
 #       'N[+458.3]KAAAAAAALQA'
 #        n[229.1629]K[229.1629]AAAAAAALQA
 
-# special_replacements = {
-#    "N[+458.3258]": "[+229.1629]-N[+229.1629]",
-#}
 
 
 
@@ -137,6 +135,11 @@ mod_alias_dict = {
     "[+229.1629]": "[U:737]",  # tmt6 737
     "[+14.0157]":  "[U:34]",  # methyl 34
     "[+114.0429]": "[U:121]",  # GG 121
+    "[+42.0106]": "[U:1]" # Acetyl
+}
+
+special_replacements = {
+    "N[+229.1629]": "[+229.1629]-",
 }
 
 def main(base_path):
@@ -154,7 +157,8 @@ def main(base_path):
 
     df = pd.merge(spec_data_df, spec_df, left_on=["id", "ScanNr"], right_on=["fileID", "SpecIDinFile"])
     # Set this for interactive use
-    # pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_columns', None)
+    lg_logger.info(df)
 
     split_lgl = [x in IRT_PEPTIDES for x in df.peptideModSeq]
     irt_df = df[split_lgl].copy()
@@ -162,8 +166,8 @@ def main(base_path):
 
     irt_df['irt'] = [IRT_PEPTIDES[x]['irt'] for x in irt_df.peptideModSeq]
     if found_peps := len(np.unique(irt_df.peptideModSeq)) > 3:
-        lg_logger.info("Fitting svr to irt peptides, found %d unique peptides", found_peps)
-        my_svr = SVR(kernel='linear', C=1e3, gamma=0.1)
+        lg_logger.info(f"Fitting huber regressor to irt peptides, found {found_peps} unique peptides")
+        my_svr = HuberRegressor()
         my_svr = my_svr.fit(X=irt_df.retentionTime.values.reshape(-1,1), y=irt_df.irt)
 
         df['pred_irt'] = my_svr.predict(df.retentionTime.values.reshape(-1,1))
@@ -194,21 +198,28 @@ def main(base_path):
         out_dict = {}
         for k, v in mod_alias_dict.items():
             modseq = modseq.replace(k, v)
-        pep = Peptide.from_sequence(f"{modseq}/{charge}", config=config)
-        out_dict["seq"] = pep.aa_to_vector()
-        out_dict["mods"] = pep.mod_to_vector()
-        out_dict["charge"] = np.array([charge], dtype=np.int32)
-        decompressed = [(*_decompress_peaks(x,y,z), pmz) for x, y, z, pmz in zip(x_df["peakMZ"], x_df["peakIntensity"], x_df["numPeaks"], x_df["precursorMZ"])]
-        specs = [Spectrum(mz=mz, intensity=intensity, ms_level=2, precursor_mz=pmz, config=config) for mz, intensity, pmz in decompressed]
-        specs = [spec.annotate(pep) for spec in specs]
-        specs = [spec.encode_fragments() for spec in specs]
-        specs = [spec / (spec.max() + 1e-8) for spec in specs]
-        out_dict["nce"] = np.array([nce], dtype = np.float32)
-        out_dict["spectra"] = np.stack(specs).mean(axis=0)
-        out_dict["weight"] = np.log1p(np.array([len(specs)]))
-        out_dict["irt"] = np.array([x_df["pred_irt"].mean()], dtype=np.float32)
-        out_dict["ims"] = np.array([ims], dtype=np.float32)
-        outs.append(out_dict)
+
+        for k, v in special_replacements.items():
+            modseq = modseq.replace(k, v)
+
+        try:
+            pep = Peptide.from_sequence(f"{modseq}/{charge}", config=config)
+            out_dict["seq"] = pep.aa_to_vector()
+            out_dict["mods"] = pep.mod_to_vector()
+            out_dict["charge"] = np.array([charge], dtype=np.int32)
+            decompressed = [(*_decompress_peaks(x,y,z), pmz) for x, y, z, pmz in zip(x_df["peakMZ"], x_df["peakIntensity"], x_df["numPeaks"], x_df["precursorMZ"])]
+            specs = [Spectrum(mz=mz, intensity=intensity, ms_level=2, precursor_mz=pmz, config=config) for mz, intensity, pmz in decompressed]
+            specs = [spec.annotate(pep) for spec in specs]
+            specs = [spec.encode_fragments() for spec in specs]
+            specs = [spec / (spec.max() + 1e-8) for spec in specs]
+            out_dict["nce"] = np.array([nce], dtype = np.float32)
+            out_dict["spectra"] = np.stack(specs).mean(axis=0)
+            out_dict["weight"] = np.log1p(np.array([len(specs)]))
+            out_dict["irt"] = np.array([x_df["pred_irt"].mean()], dtype=np.float32)
+            out_dict["ims"] = np.array([ims], dtype=np.float32)
+            outs.append(out_dict)
+        except ValueError:
+            lg_logger.warning(f"Skipped {modseq}")
 
     out_df = pd.DataFrame(outs)
     out_df.to_parquet(base_path / "processed.parquet")
