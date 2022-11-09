@@ -1,12 +1,13 @@
 import subprocess
 from spec_metadata import get_spec_metadata
 
+
 rule download_file:
     output:
         "raw/{sample}.raw",
     run:
         server = samp_to_ftp[wildcards.sample]
-	rawsample = sample_to_raw[wildcards.sample]
+        rawsample = sample_to_raw[wildcards.sample]
         shell("mkdir -p raw")
         shell(
             (
@@ -18,6 +19,7 @@ rule download_file:
             )
         )
 
+
 rule convert_file:
     input:
         "raw/{sample}.raw",
@@ -28,7 +30,7 @@ rule convert_file:
     run:
         # For some reaso, the dockerized version fails when running it directly
         # in this script, so you have to hack it this way ...
-        cmd =["zsh", "msconvert.bash", str(input).replace(' ', '\ ')] 
+        cmd = ["zsh", "msconvert.bash", str(input).replace(" ", "\ ")]
         print(cmd)
         subprocess.run(cmd, check=True, capture_output=True)
 
@@ -42,4 +44,3 @@ rule mzml_scan_metadata:
         shell("mkdir -p raw_scan_metadata")
         df = get_spec_metadata(str(input))
         df.to_csv(str(output), index=False)
-

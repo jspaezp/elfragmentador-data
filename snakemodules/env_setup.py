@@ -1,5 +1,5 @@
-import shutil
 import pathlib
+import shutil
 
 curr_dir = str(pathlib.Path(".").absolute())
 

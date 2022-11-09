@@ -1,5 +1,5 @@
-
 import pathlib
+
 
 rule elfragmentador_pin:
     input:
@@ -67,38 +67,38 @@ rule generate_report:
         output_top_swapped_psms="ef_reports/{experiment}.swapped.top.csv",
         output_best_corr_psms="ef_reports/{experiment}.best_corr.csv",
     params:
-        checkpoint=f"{CHECKPOINT}"
+        checkpoint=f"{CHECKPOINT}",
     run:
         cmd = [
-                " set -x  ;                                                               ",
-                " set -e  ;                                                               ",
-                " mkdir -p ef_reports ;                                                   ",
-                " R -e \"rmarkdown::render(                                               ",
-                "         'templates/plot_spectrum_comp_ef.Rmd',                          ",
-                "         params = list(                                                  ",
-                "             elfragmentador_pin='{input.elfragmentador_pin}',            ",
-                "             decoy_psms_ef='{input.decoy_psms_ef}',                      ",
-                "             decoy_psms='{input.decoy_psms}',                            ",
-                "             psms_ef='{input.psms_ef}',                                  ",
-                "             psms='{input.psms}',                                        ",
-                "             model_importance='{input.model_importance}',                ",
-                "             model_importance_ef='{input.model_importance_ef}',          ",
-                "             output_swapped_psms='{output.output_swapped_psms}',         ",
-                "             output_top_swapped_psms='{output.output_top_swapped_psms}', ",
-                "             output_best_corr_psms ='{output.output_best_corr_psms}'     ",
-                "         ),                                                              ",
-                "         output_file = '{output.html}',                                  ",
-                "         clean = FALSE,                                                  ",
-                "         knit_root_dir = getwd(), intermediates_dir=tempdir(),           ",
-                "         output_dir = 'ef_reports')\"                                    ",
-            ]
+            " set -x  ;                                                               ",
+            " set -e  ;                                                               ",
+            " mkdir -p ef_reports ;                                                   ",
+            ' R -e "rmarkdown::render(                                               ',
+            "         'templates/plot_spectrum_comp_ef.Rmd',                          ",
+            "         params = list(                                                  ",
+            "             elfragmentador_pin='{input.elfragmentador_pin}',            ",
+            "             decoy_psms_ef='{input.decoy_psms_ef}',                      ",
+            "             decoy_psms='{input.decoy_psms}',                            ",
+            "             psms_ef='{input.psms_ef}',                                  ",
+            "             psms='{input.psms}',                                        ",
+            "             model_importance='{input.model_importance}',                ",
+            "             model_importance_ef='{input.model_importance_ef}',          ",
+            "             output_swapped_psms='{output.output_swapped_psms}',         ",
+            "             output_top_swapped_psms='{output.output_top_swapped_psms}', ",
+            "             output_best_corr_psms ='{output.output_best_corr_psms}'     ",
+            "         ),                                                              ",
+            "         output_file = '{output.html}',                                  ",
+            "         clean = FALSE,                                                  ",
+            "         knit_root_dir = getwd(), intermediates_dir=tempdir(),           ",
+            "         output_dir = 'ef_reports')\"                                    ",
+        ]
 
         cmd = "".join([x.strip() for x in cmd])
         print(cmd)
         shell(cmd)
 
         cmd = (
-            "poetry run python ./scripts/plot_top_n.py "
+        "poetry run python ./scripts/plot_top_n.py "
             "--checkpoint {params.checkpoint} "
             "--csv {output.output_top_swapped_psms} "
             "--search_path . "
@@ -114,7 +114,6 @@ rule generate_report:
             "--prefix ef_reports/{wildcards.experiment}_BEST"
         )
         shell(cmd)
-        
 
 
 rule generate_roc_curves:
@@ -128,7 +127,7 @@ rule generate_roc_curves:
             " set -x ;                                         ",
             " set -e ;                                         ",
             " mkdir -p ef_reports ;                            ",
-            " R -e  \"rmarkdown::render(                       ",
+            ' R -e  "rmarkdown::render(                       ',
             "         'templates/plot_roc_curves.Rmd',         ",
             "         params = list(                           ",
             "             psms_ef='{input.psms_ef}',           ",
@@ -150,7 +149,7 @@ rule evaluation_on_psms:
     output:
         out_csv="ef_evaluation/{experiment}.csv",
         out_csv2="ef_evaluation/{experiment}.csv.csv",
-        log="ef_evaluation/{experiment}.log"
+        log="ef_evaluation/{experiment}.log",
     params:
         checkpoint=f"{CHECKPOINT}",
     threads: 8
@@ -168,7 +167,7 @@ rule evaluation_on_psms:
         print(cmd)
         shell(cmd)
 
-    
+
 rule plot_error_rates:
     input:
         evaluation_psms_ef="ef_evaluation/{experiment}.csv.csv",
@@ -182,7 +181,7 @@ rule plot_error_rates:
             " set -x ;                                         ",
             " set -e ;                                         ",
             " mkdir -p ef_reports ;                            ",
-            " R -e  \"rmarkdown::render(                       ",
+            ' R -e  "rmarkdown::render(                       ',
             "         'templates/plot_error_rates.Rmd',         ",
             "         params = list(                           ",
             "             psms='{input.evaluation_psms_ef}',           ",
@@ -211,7 +210,7 @@ rule plot_error_rates_top1:
             " set -x ;                                         ",
             " set -e ;                                         ",
             " mkdir -p ef_reports ;                            ",
-            " R -e  \"rmarkdown::render(                       ",
+            ' R -e  "rmarkdown::render(                       ',
             "         'templates/plot_error_rates_top1.Rmd',         ",
             "         params = list(                           ",
             "             psms='{input.evaluation_psms_ef}',           ",
@@ -225,4 +224,3 @@ rule plot_error_rates_top1:
         cmd = "".join([" " + x.strip() + " " for x in cmd])
         print(cmd)
         shell(cmd)
-
