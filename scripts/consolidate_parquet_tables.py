@@ -229,7 +229,7 @@ def main(base_path):
     """
 
     outs = []
-    MOD_REGEX = re.compile(r"(\[[A-Z]?[+0-9:]+\]-?)")
+    MOD_REGEX = re.compile(r"(.?\[[A-Z]?[+0-9:]+\]-?)")
     mod_count = defaultdict(int)
 
     for (modseq, nce, charge, ims), x_df in tqdm(
