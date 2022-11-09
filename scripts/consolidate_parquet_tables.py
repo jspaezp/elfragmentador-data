@@ -133,11 +133,40 @@ mod_alias_dict = {
     "[+14.0157]": "[U:34]",  # methyl 34
     "[+114.0429]": "[U:121]",  # GG 121
     "[+42.0106]": "[U:1]",  # Acetyl
+    "[+42.047]": "[U:37]",  # Acetyl
 }
 
-special_replacements = {
-    # "N[+229.1629]": "[+229.1629]-",
+import re
+TERM_MOD = re.compile("^(.)(\[\+[0-9.]+\])(.*)$")
+TEMPLATES = {
+    "[+229.1629]": "[+229.1629]-{aa}",
+    "[+458.3258]": "[+229.1629]-{aa}[+229.1629]",
+    "[+245.1578]": "[+229.1629]-{aa}[+15.9949]",
 }
+EXCLUSIONS = {
+    ("K", "[+229.1629]"),
+}
+
+def move_terminal_mods(seq):
+    """Move terminal mods to first aminoacid"""
+    match = TERM_MOD.match(seq)
+    if not match:
+        return seq
+    
+    aa, mod, rest = match.groups()
+    if mod in TEMPLATES:
+        if (aa, mod) in EXCLUSIONS:
+            return seq
+        mod = TEMPLATES[mod].format(aa=aa)
+        seq = mod + rest
+    return seq
+
+def test_move_terminal_mods():
+    assert move_terminal_mods("K[+229.1629]AA") == "K[+229.1629]AA"
+    assert move_terminal_mods("K[+458.3258]AA") == "[+229.1629]-K[+229.1629]AA"
+    assert move_terminal_mods("K[+229.1629]AA") == "K[+229.1629]AA"
+    assert move_terminal_mods("M[+245.1578]AA") == "[+229.1629]-M[+15.9949]AA"
+
 
 
 def main(base_path):
@@ -206,10 +235,8 @@ def main(base_path):
         )
     ):
         out_dict = {}
+        modseq = move_terminal_mods(modseq)
         for k, v in mod_alias_dict.items():
-            modseq = modseq.replace(k, v)
-
-        for k, v in special_replacements.items():
             modseq = modseq.replace(k, v)
 
         try:
