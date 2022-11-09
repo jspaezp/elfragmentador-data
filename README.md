@@ -59,6 +59,8 @@ Disk usage:
     - 50G
 6. parquet files
     - 33G
+7. Processed Parquet files
+    - 1GB
 
 ## Setting up msconvert on singularity ...
 

@@ -1,5 +1,5 @@
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -138,6 +138,7 @@ mod_alias_dict = {
 }
 
 import re
+
 TERM_MOD = re.compile("^(.)(\[\+[0-9.]+\])(.*)$")
 TEMPLATES = {
     "[+229.1629]": "[+229.1629]-{aa}",
@@ -148,12 +149,13 @@ EXCLUSIONS = {
     ("K", "[+229.1629]"),
 }
 
+
 def move_terminal_mods(seq):
     """Move terminal mods to first aminoacid"""
     match = TERM_MOD.match(seq)
     if not match:
         return seq
-    
+
     aa, mod, rest = match.groups()
     if mod in TEMPLATES:
         if (aa, mod) in EXCLUSIONS:
@@ -162,12 +164,12 @@ def move_terminal_mods(seq):
         seq = mod + rest
     return seq
 
+
 def test_move_terminal_mods():
     assert move_terminal_mods("K[+229.1629]AA") == "K[+229.1629]AA"
     assert move_terminal_mods("K[+458.3258]AA") == "[+229.1629]-K[+229.1629]AA"
     assert move_terminal_mods("K[+229.1629]AA") == "K[+229.1629]AA"
     assert move_terminal_mods("M[+245.1578]AA") == "[+229.1629]-M[+15.9949]AA"
-
 
 
 def main(base_path):
@@ -199,7 +201,7 @@ def main(base_path):
     df = df[[not x for x in split_lgl]].copy()
 
     irt_df["irt"] = [IRT_PEPTIDES[x]["irt"] for x in irt_df.peptideModSeq]
-    if found_peps := len(np.unique(irt_df.peptideModSeq)) > 3:
+    if (found_peps := len(np.unique(irt_df.peptideModSeq))) > 3:
         lg_logger.info(
             f"Fitting huber regressor to irt peptides, found {found_peps} unique"
             " peptides"
@@ -212,6 +214,9 @@ def main(base_path):
         uniplot.plot(df["pred_irt"], df["retentionTime"])
         uniplot.plot(irt_df["irt"], irt_df["retentionTime"], color="red")
     else:
+        lg_logger.info(
+            f"Skipping irt calibration, found onlu {found_peps} uniqueirt peptides"
+        )
         df["pred_irt"] = float("nan")
 
     config = Config.from_toml("ms2ml_config.toml")
@@ -229,6 +234,8 @@ def main(base_path):
     """
 
     outs = []
+    skipped_sequnces = []
+
     MOD_REGEX = re.compile(r"(.?\[[A-Z]?[+0-9:]+\]-?)")
     mod_count = defaultdict(int)
 
@@ -237,6 +244,9 @@ def main(base_path):
             ["peptideModSeq", "CollisionEnergy", "precursorCharge", "ionMobility"]
         )
     ):
+        # If needed the peptide here van be recycled to speedup the computations
+        # basicaly doing a nested for loop where the peptide is shared between the
+        # different collision energies
         out_dict = {}
         modseq = move_terminal_mods(modseq)
         for k, v in mod_alias_dict.items():
@@ -279,13 +289,17 @@ def main(base_path):
             out_dict["ims"] = np.array([ims], dtype=np.float32)
             outs.append(out_dict)
         except ValueError:
+            skipped_sequnces.append(modseq)
             lg_logger.warning(f"Skipped {modseq}")
 
     lg_logger.info(f"Found {len(outs)} spectra")
+    lg_logger.info(f"Skipped {len(skipped_sequnces)} sequences")
+    lg_logger.info(f"{skipped_sequnces}")
     lg_logger.info(f"Found {len(mod_count)} unique modifications")
     lg_logger.info(f"{mod_count}")
 
     out_df = pd.DataFrame(outs)
+    lg_logger.info(f"{out_df.head()}")
     out_df.to_parquet(base_path / "processed.parquet")
 
 

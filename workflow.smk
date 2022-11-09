@@ -293,9 +293,11 @@ rule process_parquet_tables:
         spec_metadata_table="bibliospec_tables/{experiment}/spec_meta.parquet",
     output:
         spec_metadata_table="bibliospec_tables/{experiment}/processed.parquet",
+        commondir_spec_metadata_table="processed_bibliospec_tables/{experiment}_processed.parquet",
     run:
         base_path = Path(input.spec_metadata_table).parent
         shell(f"python scripts/consolidate_parquet_tables.py {base_path}")
+        shell(f"cp {output.spec_metadata_table} {output.commondir_spec_metadata_table}")
 
 
 # add checksum as 'blibID' in every table
