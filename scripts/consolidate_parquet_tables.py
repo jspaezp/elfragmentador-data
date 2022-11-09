@@ -1,14 +1,14 @@
-import pandas as pd
-import numpy as np
+from pathlib import Path
 
-from ms2ml import Peptide, Config, AnnotatedPeptideSpectrum, Spectrum
+import numpy as np
+import pandas as pd
+import uniplot
+from loguru import logger as lg_logger
+from ms2ml import AnnotatedPeptideSpectrum, Config, Peptide, Spectrum
 from ms2ml.data.parsing.bibliospec import _decompress_peaks
 from ms2ml.landmarks import IRT_PEPTIDES
-from tqdm.auto import tqdm
-from loguru import logger as lg_logger
 from sklearn.svm import SVR
-import uniplot
-from pathlib import Path
+from tqdm.auto import tqdm
 
 """
 bibliospec_tables/AspN/mods.parquet
@@ -123,8 +123,7 @@ bibliospec_tables/Ymod_Unmod/mods.parquet
 
 # special_replacements = {
 #    "N[+458.3258]": "[+229.1629]-N[+229.1629]",
-#}
-
+# }
 
 
 # But translating to unimod is helpful ...
@@ -132,27 +131,34 @@ mod_alias_dict = {
     "[+0.984]": "[U:7]",
     "[+15.9949]": "[U:35]",
     "[+79.9663]": "[U:21]",
-    "[+28.0313]":  "[U:36]",  # dimethyl 36
-    "[+44.9851]":  "[U:354]",  # nitro 354
+    "[+28.0313]": "[U:36]",  # dimethyl 36
+    "[+44.9851]": "[U:354]",  # nitro 354
     "[+229.1629]": "[U:737]",  # tmt6 737
-    "[+14.0157]":  "[U:34]",  # methyl 34
+    "[+14.0157]": "[U:34]",  # methyl 34
     "[+114.0429]": "[U:121]",  # GG 121
 }
 
-def main(base_path):
 
+def main(base_path):
     lg_logger.info("Starting the processing of spectra ... ")
     lg_logger.info("Using the following parameters: ")
     lg_logger.info("base_path: %s" % base_path)
 
-    spec_meta_df = pd.read_parquet(base_path / "spec_meta.parquet")[["RawFile", "CollisionEnergy", "ScanNr"]]
+    spec_meta_df = pd.read_parquet(base_path / "spec_meta.parquet")[
+        ["RawFile", "CollisionEnergy", "ScanNr"]
+    ]
     spec_sourcefiles = pd.read_parquet(base_path / "spec_sourcefiles.parquet")
     spec_data_df = pd.merge(spec_meta_df, spec_sourcefiles)
 
     spec_df = pd.read_parquet(base_path / "spec.parquet")
     spec_df["SpecIDinFile"] = spec_df["SpecIDinFile"].astype(int)
 
-    df = pd.merge(spec_data_df, spec_df, left_on=["id", "ScanNr"], right_on=["fileID", "SpecIDinFile"])
+    df = pd.merge(
+        spec_data_df,
+        spec_df,
+        left_on=["id", "ScanNr"],
+        right_on=["fileID", "SpecIDinFile"],
+    )
     # Set this for interactive use
     # pd.set_option('display.max_columns', None)
 
@@ -160,19 +166,20 @@ def main(base_path):
     irt_df = df[split_lgl].copy()
     df = df[[not x for x in split_lgl]].copy()
 
-    irt_df['irt'] = [IRT_PEPTIDES[x]['irt'] for x in irt_df.peptideModSeq]
+    irt_df["irt"] = [IRT_PEPTIDES[x]["irt"] for x in irt_df.peptideModSeq]
     if found_peps := len(np.unique(irt_df.peptideModSeq)) > 3:
-        lg_logger.info("Fitting svr to irt peptides, found %d unique peptides", found_peps)
-        my_svr = SVR(kernel='linear', C=1e3, gamma=0.1)
-        my_svr = my_svr.fit(X=irt_df.retentionTime.values.reshape(-1,1), y=irt_df.irt)
+        lg_logger.info(
+            "Fitting svr to irt peptides, found %d unique peptides", found_peps
+        )
+        my_svr = SVR(kernel="linear", C=1e3, gamma=0.1)
+        my_svr = my_svr.fit(X=irt_df.retentionTime.values.reshape(-1, 1), y=irt_df.irt)
 
-        df['pred_irt'] = my_svr.predict(df.retentionTime.values.reshape(-1,1))
+        df["pred_irt"] = my_svr.predict(df.retentionTime.values.reshape(-1, 1))
 
-        uniplot.plot(df['pred_irt'], df['retentionTime'])
-        uniplot.plot(irt_df['irt'], irt_df['retentionTime'], color="red")
+        uniplot.plot(df["pred_irt"], df["retentionTime"])
+        uniplot.plot(irt_df["irt"], irt_df["retentionTime"], color="red")
     else:
-        df['pred_irt'] = float("nan")
-
+        df["pred_irt"] = float("nan")
 
     config = Config.from_toml("ms2ml_config.toml")
 
@@ -190,7 +197,11 @@ def main(base_path):
 
     outs = []
 
-    for (modseq, nce, charge, ims), x_df in tqdm(df.groupby(["peptideModSeq", "CollisionEnergy", "precursorCharge", "ionMobility"])):
+    for (modseq, nce, charge, ims), x_df in tqdm(
+        df.groupby(
+            ["peptideModSeq", "CollisionEnergy", "precursorCharge", "ionMobility"]
+        )
+    ):
         out_dict = {}
         for k, v in mod_alias_dict.items():
             modseq = modseq.replace(k, v)
@@ -198,12 +209,25 @@ def main(base_path):
         out_dict["seq"] = pep.aa_to_vector()
         out_dict["mods"] = pep.mod_to_vector()
         out_dict["charge"] = np.array([charge], dtype=np.int32)
-        decompressed = [(*_decompress_peaks(x,y,z), pmz) for x, y, z, pmz in zip(x_df["peakMZ"], x_df["peakIntensity"], x_df["numPeaks"], x_df["precursorMZ"])]
-        specs = [Spectrum(mz=mz, intensity=intensity, ms_level=2, precursor_mz=pmz, config=config) for mz, intensity, pmz in decompressed]
+        decompressed = [
+            (*_decompress_peaks(x, y, z), pmz)
+            for x, y, z, pmz in zip(
+                x_df["peakMZ"],
+                x_df["peakIntensity"],
+                x_df["numPeaks"],
+                x_df["precursorMZ"],
+            )
+        ]
+        specs = [
+            Spectrum(
+                mz=mz, intensity=intensity, ms_level=2, precursor_mz=pmz, config=config
+            )
+            for mz, intensity, pmz in decompressed
+        ]
         specs = [spec.annotate(pep) for spec in specs]
         specs = [spec.encode_fragments() for spec in specs]
         specs = [spec / (spec.max() + 1e-8) for spec in specs]
-        out_dict["nce"] = np.array([nce], dtype = np.float32)
+        out_dict["nce"] = np.array([nce], dtype=np.float32)
         out_dict["spectra"] = np.stack(specs).mean(axis=0)
         out_dict["weight"] = np.log1p(np.array([len(specs)]))
         out_dict["irt"] = np.array([x_df["pred_irt"].mean()], dtype=np.float32)
@@ -216,6 +240,7 @@ def main(base_path):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("base_path", type=Path)
     args = parser.parse_args()

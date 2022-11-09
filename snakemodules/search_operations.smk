@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from env_setup import curr_dir
 
+
 rule comet_phospho_params:
     input:
         "comet_params/comet.params.high_high",

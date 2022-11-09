@@ -1,4 +1,3 @@
-
 def get_mokapot_command(target_dir="mokapot", addition=""):
     base_str = """
         set -e

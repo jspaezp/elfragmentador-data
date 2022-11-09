@@ -97,9 +97,10 @@ print(
 19.047732521248
 """
 
-from tqdm.auto import tqdm
 import shlex
 import time
+
+from tqdm.auto import tqdm
 
 
 def add_ce_info(mzml_directory, in_sptxt, out_sptxt):

@@ -152,14 +152,13 @@ rule generate_sptxt_csv:
 
         pathlib.Path(str(output.csv)).parent.mkdir(exist_ok=True)
         pathlib.Path(str(output.feather)).parent.mkdir(exist_ok=True)
-        reader=SptxtReader(filepath=str(input))
+        reader = SptxtReader(filepath=str(input))
         df = reader.to_df(
             min_peaks=3,
             min_delta_ascore=20,
         )
         df.to_csv(str(output.csv), index=False)
         df.reset_index(drop=True).to_feather(str(output.feather))
-
 
 
 rule add_rt_to_sptxt_csv:
