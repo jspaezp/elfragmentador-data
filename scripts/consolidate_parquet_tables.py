@@ -1,4 +1,5 @@
 from pathlib import Path
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -228,6 +229,8 @@ def main(base_path):
     """
 
     outs = []
+    MOD_REGEX = re.compile("([A-Z]?\[[+0-9:]+\]-?)")
+    mod_count = defaultdict(int)
 
     for (modseq, nce, charge, ims), x_df in tqdm(
         df.groupby(
@@ -238,6 +241,9 @@ def main(base_path):
         modseq = move_terminal_mods(modseq)
         for k, v in mod_alias_dict.items():
             modseq = modseq.replace(k, v)
+
+        for x in MOD_REGEX.findall(modseq):
+            mod_count[x] += 1
 
         try:
             pep = Peptide.from_sequence(f"{modseq}/{charge}", config=config)
@@ -274,6 +280,10 @@ def main(base_path):
             outs.append(out_dict)
         except ValueError:
             lg_logger.warning(f"Skipped {modseq}")
+
+    lg_logger.info(f"Found {len(outs)} spectra")
+    lg_logger.info(f"Found {len(mod_count)} unique modifications")
+    lg_logger.info(f"{mod_count}")
 
     out_df = pd.DataFrame(outs)
     out_df.to_parquet(base_path / "processed.parquet")
