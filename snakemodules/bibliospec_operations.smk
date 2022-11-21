@@ -89,7 +89,7 @@ rule bibliospec:
             "LC_ALL='C' BlibBuild ",
             "-H ",  # More than one decimal to describe mod
             "-C 2G",  # minimum size to start caching
-            "-c 0.99",
+            "-c 0.999",
             "-m 500M",  # sqlite cache size
             "-A",  # warns ambiguous spectra
             str(output.ssl_file),
@@ -125,7 +125,7 @@ rule filter_bibliospec:
             "--memory-cache 500M "
             "--min-peaks 20 "
             "--min-score 0 "  # Filtering should be done creating the first lib
-        "-v status "
+            "-v status "
             "{input.library}"
             "{output.filtered_library} "
         )

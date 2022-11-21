@@ -256,6 +256,8 @@ def main(base_path):
             mod_count[x] += 1
 
         try:
+            if len(x_df) < 3:
+                continue
             pep = Peptide.from_sequence(f"{modseq}/{charge}", config=config)
             out_dict["seq"] = pep.aa_to_vector()
             out_dict["mods"] = pep.mod_to_vector()
