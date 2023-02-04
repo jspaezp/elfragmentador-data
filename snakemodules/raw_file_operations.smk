@@ -22,7 +22,7 @@ rule download_file:
 
 rule convert_file:
     input:
-        "raw/{sample}.raw",
+        ancient("raw/{sample}.raw"),
     output:
         "raw/{sample}.mzML",
     benchmark:
